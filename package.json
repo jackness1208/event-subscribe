@@ -51,7 +51,7 @@
     "typescript": "^4.3.4"
   },
   "name": "event-subscribe",
-  "repository": "https://github.com/jackness1208/eventbridge.git",
+  "repository": "https://github.com/jackness1208/event-subscribe.git",
   "author": "jackness",
   "license": "MIT"
 }

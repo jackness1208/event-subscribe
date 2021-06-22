@@ -1,4 +1,4 @@
-# eventbridge
+# event-subscribe
 
 用于管理事件的 订阅、触发、回放
 
@@ -6,21 +6,21 @@
 
 ```bash
 # yarn
-yarn add eventbridge
+yarn add event-subscribe
 # npm
-npm i eventbridge --save
+npm i event-subscribe --save
 ```
 
 ## usage
 
 ```typescript
-import { eventBridge } from 'eventbridge'
+import { eventSubscribe } from 'event-subscribe'
 
-eventBridge.on('hello', (ctx) => {
+eventSubscribe.on('hello', (ctx) => {
   console.log('hello', ctx)
 })
 
-eventBridge.trigger('hello', 'world')
+eventSubscribe.trigger('hello', 'world')
 ```
 
 ## types
@@ -33,7 +33,7 @@ export interface EventResultMap {
 export interface EventFnMap {
   [eventName: string]: ((rs: any) => void)[]
 }
-export declare const eventBridge: {
+export declare const eventSubscribe: {
   /**
    * 事件订阅
    * @param name: 事件名称

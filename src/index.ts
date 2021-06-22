@@ -10,7 +10,7 @@ export interface EventFnMap {
 let eventResultMap: EventResultMap = {}
 let eventFnMap: EventFnMap = {}
 
-export const eventBridge = {
+export const eventSubscribe = {
   /**
    * 事件订阅
    * @param name: 事件名称

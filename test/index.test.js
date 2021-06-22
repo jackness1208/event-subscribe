@@ -1,28 +1,28 @@
-const { eventBridge } = require('../')
+const { eventSubscribe } = require('../')
 
-test('eventBridge.on(fn) test', () => {
-  eventBridge.reset()
+test('eventSubscribe.on(fn) test', () => {
+  eventSubscribe.reset()
   const result = []
-  eventBridge.on('hello', () => {
+  eventSubscribe.on('hello', () => {
     result.push('a')
   })
-  eventBridge.on('hello', () => {
+  eventSubscribe.on('hello', () => {
     result.push('b')
   })
-  eventBridge.on('hello', () => {
+  eventSubscribe.on('hello', () => {
     result.push('c')
   })
 
-  eventBridge.trigger('hello', undefined)
+  eventSubscribe.trigger('hello', undefined)
   expect(result).toEqual(['a', 'b', 'c'])
 })
 
-test('eventBridge.on(fn, immediate) test', () => {
-  eventBridge.reset()
+test('eventSubscribe.on(fn, immediate) test', () => {
+  eventSubscribe.reset()
   const result = []
-  eventBridge.trigger('hello', '01')
+  eventSubscribe.trigger('hello', '01')
 
-  eventBridge.on(
+  eventSubscribe.on(
     'hello',
     (ctx) => {
       result.push(`a-${ctx}`)
@@ -30,26 +30,26 @@ test('eventBridge.on(fn, immediate) test', () => {
     true
   )
 
-  eventBridge.on('hello', (ctx) => {
+  eventSubscribe.on('hello', (ctx) => {
     result.push(`b-${ctx}`)
   })
 
-  eventBridge.on('hello', (ctx) => {
+  eventSubscribe.on('hello', (ctx) => {
     result.push(`c-${ctx}`)
   })
 
-  eventBridge.trigger('hello', '02')
+  eventSubscribe.trigger('hello', '02')
 
   expect(result).toEqual(['a-01', 'a-02', 'b-02', 'c-02'])
 })
 
-test('eventBridge.replay(name) test', () => {
-  eventBridge.reset()
+test('eventSubscribe.replay(name) test', () => {
+  eventSubscribe.reset()
   const result = []
-  eventBridge.trigger('hello', '01')
-  eventBridge.on('hello', (ctx) => {
+  eventSubscribe.trigger('hello', '01')
+  eventSubscribe.on('hello', (ctx) => {
     result.push(`a-${ctx}`)
   })
-  eventBridge.replay('hello')
+  eventSubscribe.replay('hello')
   expect(result).toEqual(['a-01'])
 })

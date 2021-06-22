@@ -1,11 +1,11 @@
 /*!
- * eventbridge esm 0.1.0
+ * event-subscribe esm 0.1.0
  * (c) 2020 - 2021 jackness
  * Released under the MIT License.
  */
 var eventResultMap = {};
 var eventFnMap = {};
-var eventBridge = {
+var eventSubscribe = {
     /**
      * 事件订阅
      * @param name: 事件名称
@@ -55,4 +55,4 @@ var eventBridge = {
     }
 };
 
-export { eventBridge };
+export { eventSubscribe };

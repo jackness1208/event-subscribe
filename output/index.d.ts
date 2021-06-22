@@ -5,7 +5,7 @@ export interface EventResultMap {
 export interface EventFnMap {
     [eventName: string]: ((rs: any) => void)[];
 }
-export declare const eventBridge: {
+export declare const eventSubscribe: {
     /**
      * 事件订阅
      * @param name: 事件名称
