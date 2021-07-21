@@ -1,26 +1,72 @@
 /*!
- * event-subscribe esm 0.1.0
+ * event-subscribe esm 0.2.0
  * (c) 2020 - 2021 jackness
  * Released under the MIT License.
  */
 var eventResultMap = {};
 var eventFnMap = {};
+/** 事件 key map */
+var eventKeyMap = new Map();
+/** 事件key */
+var eventKeyPadding = 0;
+/** 格式化 事件key */
+function formatEventKey(name, fnKey) {
+    if (fnKey) {
+        return "" + fnKey;
+    }
+    else {
+        return name + "-" + eventKeyPadding++;
+    }
+}
 var eventSubscribe = {
     /**
      * 事件订阅
      * @param name: 事件名称
      * @param callback: 回调方法
      * @param immediate: 若订阅之前已经触发过，是否马上执行
+     * @param fnKey: 用于去掉订阅时标识
+     * @returns eventKey 订阅标识, 用于 off
      * */
-    on: function (name, callback, immediate) {
+    on: function (name, callback, immediate, fnKey) {
         if (name in eventFnMap) {
             eventFnMap[name].push(callback);
         }
         else {
             eventFnMap[name] = [callback];
         }
+        if (fnKey) {
+            // 查看是否之前已经有绑定, 有则先去掉
+            eventSubscribe.off(name, fnKey);
+        }
+        // key 关系初始化
+        var eventKey = formatEventKey(name, fnKey);
+        eventKeyMap.set(eventKey, callback);
         if (immediate && name in eventResultMap) {
             callback(eventResultMap[name]);
+        }
+        return eventKey;
+    },
+    /**
+     * 事件退订
+     * @param name: 事件名称
+     * @param ctx: 订阅时方法 | 订阅标识
+     * */
+    off: function (name, ctx) {
+        var eventFns = eventFnMap[name];
+        var rFn;
+        if (eventFns === null || eventFns === void 0 ? void 0 : eventFns.length) {
+            if (typeof ctx === 'string') {
+                rFn = eventKeyMap.get(ctx);
+            }
+            else {
+                rFn = ctx;
+            }
+            if (rFn) {
+                var rFnIndex = eventFns.indexOf(rFn);
+                if (rFnIndex !== -1) {
+                    eventFns.splice(rFnIndex, 1);
+                }
+            }
         }
     },
     /**
@@ -52,6 +98,7 @@ var eventSubscribe = {
     reset: function () {
         eventResultMap = {};
         eventFnMap = {};
+        eventKeyMap.clear();
     }
 };
 
