@@ -18,17 +18,24 @@ export declare const eventSubscribe: {
      * */
     on<R = any>(name: string, callback: EventCallback<R>, immediate?: boolean | undefined, fnKey?: string | undefined): string;
     /**
+     * 事件一次性订阅
+     * @param name: 事件名称
+     * @param callback: 回调方法
+     * @returns eventKey 订阅标识, 用于 off
+     * */
+    once<R_1 = any>(name: string, callback: EventCallback<R_1>): string;
+    /**
      * 事件退订
      * @param name: 事件名称
      * @param ctx: 订阅时方法 | 订阅标识
      * */
-    off<R_1 = any>(name: string, ctx: string | EventCallback<R_1>): void;
+    off<R_2 = any>(name: string, ctx: string | EventCallback<R_2>): void;
     /**
      * 事件广播
      * @param name: 事件名称
      * @param data: 入参数据
      * */
-    trigger<R_2 = any>(name: string, data: R_2): void;
+    trigger<R_3 = any>(name: string, data: R_3): void;
     /**
      * 事件回放
      * @param name: 事件名称

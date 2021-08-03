@@ -94,3 +94,15 @@ test('eventSubscribe.off() test', () => {
   eventSubscribe.trigger('hello', '02')
   expect(result).toEqual(['a-01'])
 })
+
+test('eventSubscribe.once() test', () => {
+  eventSubscribe.reset()
+  const result = []
+  const key = eventSubscribe.once('hello', (ctx) => {
+    result.push(`a-${ctx}`)
+  })
+
+  eventSubscribe.trigger('hello', '01')
+  eventSubscribe.trigger('hello', '02')
+  expect(result).toEqual(['a-01'])
+})
