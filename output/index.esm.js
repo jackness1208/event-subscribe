@@ -1,5 +1,5 @@
 /*!
- * event-subscribe esm 0.2.0
+ * event-subscribe esm 0.3.0
  * (c) 2020 - 2021 jackness
  * Released under the MIT License.
  */
@@ -45,6 +45,20 @@ var eventSubscribe = {
             callback(eventResultMap[name]);
         }
         return eventKey;
+    },
+    /**
+     * 事件一次性订阅
+     * @param name: 事件名称
+     * @param callback: 回调方法
+     * @returns eventKey 订阅标识, 用于 off
+     * */
+    once: function (name, callback) {
+        var _this = this;
+        var key = this.on(name, function (res) {
+            _this.off(name, key);
+            callback(res);
+        }, false, formatEventKey(name));
+        return key;
     },
     /**
      * 事件退订

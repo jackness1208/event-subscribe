@@ -57,6 +57,25 @@ export const eventSubscribe = {
     }
     return eventKey
   },
+
+  /**
+   * 事件一次性订阅
+   * @param name: 事件名称
+   * @param callback: 回调方法
+   * @returns eventKey 订阅标识, 用于 off
+   * */
+  once<R = any>(name: string, callback: EventCallback<R>) {
+    const key = this.on<R>(
+      name,
+      (res) => {
+        this.off(name, key)
+        callback(res)
+      },
+      false,
+      formatEventKey(name)
+    )
+    return key
+  },
   /**
    * 事件退订
    * @param name: 事件名称
