@@ -1,24 +1,26 @@
 /*!
- * event-subscribe esm 0.3.0
+ * event-subscribe esm 1.0.0
  * (c) 2020 - 2021 jackness
  * Released under the MIT License.
  */
-var eventResultMap = {};
-var eventFnMap = {};
-/** 事件 key map */
-var eventKeyMap = new Map();
-/** 事件key */
-var eventKeyPadding = 0;
-/** 格式化 事件key */
-function formatEventKey(name, fnKey) {
-    if (fnKey) {
-        return "" + fnKey;
+var EventSubscribe = /** @class */ (function () {
+    function EventSubscribe() {
+        this.eventResultMap = {};
+        this.eventFnMap = {};
+        /** 事件 key map */
+        this.eventKeyMap = new Map();
+        /** 事件key */
+        this.eventKeyPadding = 0;
     }
-    else {
-        return name + "-" + eventKeyPadding++;
-    }
-}
-var eventSubscribe = {
+    /** 格式化 事件key */
+    EventSubscribe.prototype.formatEventKey = function (name, fnKey) {
+        if (fnKey) {
+            return "" + fnKey;
+        }
+        else {
+            return name + "-" + this.eventKeyPadding++;
+        }
+    };
     /**
      * 事件订阅
      * @param name: 事件名称
@@ -27,45 +29,66 @@ var eventSubscribe = {
      * @param fnKey: 用于去掉订阅时标识
      * @returns eventKey 订阅标识, 用于 off
      * */
-    on: function (name, callback, immediate, fnKey) {
-        if (name in eventFnMap) {
-            eventFnMap[name].push(callback);
+    EventSubscribe.prototype.on = function (name, callback, immediate, fnKey) {
+        var _a;
+        var _b = this, eventFnMap = _b.eventFnMap, eventResultMap = _b.eventResultMap, eventKeyMap = _b.eventKeyMap;
+        if (eventFnMap[name]) {
+            (_a = eventFnMap[name]) === null || _a === void 0 ? void 0 : _a.push(callback);
         }
         else {
             eventFnMap[name] = [callback];
         }
         if (fnKey) {
             // 查看是否之前已经有绑定, 有则先去掉
-            eventSubscribe.off(name, fnKey);
+            this.off(name, fnKey);
         }
         // key 关系初始化
-        var eventKey = formatEventKey(name, fnKey);
+        var eventKey = this.formatEventKey("" + name, fnKey);
         eventKeyMap.set(eventKey, callback);
         if (immediate && name in eventResultMap) {
             callback(eventResultMap[name]);
         }
         return eventKey;
-    },
+    };
+    /**
+     * 事件多次性订阅, callback
+     * 若返回 true, 则继续定义
+     * 若返回 false， 自动取消订阅
+     * @param name: 事件名称
+     * @param callback: 回调方法
+     * @param immediate: 立刻执行
+     * @returns eventKey 订阅标识, 用于 off
+     * */
+    EventSubscribe.prototype.onceUntil = function (name, callback, immediate) {
+        var _this = this;
+        var key = this.on(name, function (res) {
+            if (!callback(res)) {
+                _this.off(name, key);
+            }
+        }, immediate, this.formatEventKey("" + name));
+        return key;
+    };
     /**
      * 事件一次性订阅
      * @param name: 事件名称
      * @param callback: 回调方法
      * @returns eventKey 订阅标识, 用于 off
      * */
-    once: function (name, callback) {
+    EventSubscribe.prototype.once = function (name, callback) {
         var _this = this;
         var key = this.on(name, function (res) {
             _this.off(name, key);
             callback(res);
-        }, false, formatEventKey(name));
+        }, false, this.formatEventKey("" + name));
         return key;
-    },
+    };
     /**
      * 事件退订
      * @param name: 事件名称
      * @param ctx: 订阅时方法 | 订阅标识
      * */
-    off: function (name, ctx) {
+    EventSubscribe.prototype.off = function (name, ctx) {
+        var _a = this, eventFnMap = _a.eventFnMap, eventKeyMap = _a.eventKeyMap;
         var eventFns = eventFnMap[name];
         var rFn;
         if (eventFns === null || eventFns === void 0 ? void 0 : eventFns.length) {
@@ -82,38 +105,47 @@ var eventSubscribe = {
                 }
             }
         }
-    },
+    };
     /**
      * 事件广播
      * @param name: 事件名称
      * @param data: 入参数据
      * */
-    trigger: function (name, data) {
-        if (name in eventFnMap) {
-            eventFnMap[name].forEach(function (fn) {
+    EventSubscribe.prototype.trigger = function (name, data) {
+        var _a;
+        var _b = this, eventFnMap = _b.eventFnMap, eventResultMap = _b.eventResultMap;
+        if (eventFnMap[name]) {
+            (_a = eventFnMap[name]) === null || _a === void 0 ? void 0 : _a.forEach(function (fn) {
                 fn(data);
             });
         }
         eventResultMap[name] = data;
-    },
+    };
     /**
      * 事件回放
      * @param name: 事件名称
      * */
-    replay: function (name) {
-        if (name in eventFnMap && name in eventResultMap) {
+    EventSubscribe.prototype.replay = function (name) {
+        var _a;
+        var _b = this, eventFnMap = _b.eventFnMap, eventResultMap = _b.eventResultMap;
+        if (eventFnMap[name] && name in eventResultMap) {
             var lastResult_1 = eventResultMap[name];
-            eventFnMap[name].forEach(function (fn) {
+            (_a = eventFnMap[name]) === null || _a === void 0 ? void 0 : _a.forEach(function (fn) {
                 fn(lastResult_1);
             });
         }
-    },
-    /** reset 清空已绑定的事件 */
-    reset: function () {
-        eventResultMap = {};
-        eventFnMap = {};
-        eventKeyMap.clear();
-    }
-};
+    };
+    EventSubscribe.prototype.reset = function () {
+        this.destroy();
+    };
+    /** destroy 清空已绑定的事件 */
+    EventSubscribe.prototype.destroy = function () {
+        this.eventResultMap = {};
+        this.eventFnMap = {};
+        this.eventKeyMap.clear();
+    };
+    return EventSubscribe;
+}());
+var eventSubscribe = new EventSubscribe();
 
-export { eventSubscribe };
+export { EventSubscribe, eventSubscribe };
