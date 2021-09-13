@@ -1,5 +1,10 @@
 # 版本变更
 
+## 1.0.0 (2021-09-14)
+
+- feat: 新增 `eventSubscribe.onceUntil(name, fn, immediate)` 函数
+- feat: 新增 `EventSubscribe` 类，并且运行直接在 new 时把 map 传进去
+
 ## 0.3.0 (2021-08-03)
 
 - feat: 新增 `eventSubscribe.once(name, fn)`

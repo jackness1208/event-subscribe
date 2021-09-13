@@ -106,3 +106,20 @@ test('eventSubscribe.once() test', () => {
   eventSubscribe.trigger('hello', '02')
   expect(result).toEqual(['a-01'])
 })
+
+test('eventSubscribe.onceUntil() test', () => {
+  eventSubscribe.reset()
+  const result = []
+  let padding = 0
+  const key = eventSubscribe.onceUntil('hello', (ctx) => {
+    result.push(`a-${ctx}`)
+    padding++
+    return padding < 2
+  })
+
+  eventSubscribe.trigger('hello', '01')
+  eventSubscribe.trigger('hello', '02')
+  eventSubscribe.trigger('hello', '03')
+  eventSubscribe.trigger('hello', '04')
+  expect(result).toEqual(['a-01', 'a-02'])
+})

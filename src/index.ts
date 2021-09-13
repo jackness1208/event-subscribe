@@ -3,31 +3,34 @@ export interface EventResultMap {
   [eventName: string]: any
 }
 
-export interface EventFnMap {
-  [eventName: string]: ((rs: any) => void)[]
-}
-
-let eventResultMap: EventResultMap = {}
-let eventFnMap: EventFnMap = {}
-
-/** 事件 key map */
-const eventKeyMap = new Map<string, EventCallback>()
-
-/** 事件key */
-let eventKeyPadding = 0
-/** 格式化 事件key */
-function formatEventKey(name: string, fnKey?: string) {
-  if (fnKey) {
-    return `${fnKey}`
-  } else {
-    return `${name}-${eventKeyPadding++}`
-  }
-}
-
 /** 事件回调 */
 export type EventCallback<R = any> = (rs: R) => void
+export type EventOnceUntilCallback<R = any> = (rs: R) => boolean | undefined
 
-export const eventSubscribe = {
+export interface EventFnMap {
+  [eventName: string]: EventCallback[]
+}
+export class EventSubscribe<
+  M extends EventResultMap = EventResultMap,
+  K extends keyof M = keyof M,
+  R = M[K]
+> {
+  private eventResultMap: Partial<Record<K, R>> = {}
+  private eventFnMap: Partial<Record<K, EventCallback<R>[]>> = {}
+  /** 事件 key map */
+  private eventKeyMap: Map<string, EventCallback<R>> = new Map()
+  /** 事件key */
+  private eventKeyPadding: number = 0
+
+  /** 格式化 事件key */
+  private formatEventKey(name: string, fnKey?: string) {
+    if (fnKey) {
+      return `${fnKey}`
+    } else {
+      return `${name}-${this.eventKeyPadding++}`
+    }
+  }
+
   /**
    * 事件订阅
    * @param name: 事件名称
@@ -36,27 +39,51 @@ export const eventSubscribe = {
    * @param fnKey: 用于去掉订阅时标识
    * @returns eventKey 订阅标识, 用于 off
    * */
-  on<R = any>(name: string, callback: EventCallback<R>, immediate?: boolean, fnKey?: string) {
-    if (name in eventFnMap) {
-      eventFnMap[name].push(callback)
+  on(name: K, callback: EventCallback<R>, immediate?: boolean, fnKey?: string) {
+    const { eventFnMap, eventResultMap, eventKeyMap } = this
+    if (eventFnMap[name]) {
+      eventFnMap[name]?.push(callback)
     } else {
       eventFnMap[name] = [callback]
     }
 
     if (fnKey) {
       // 查看是否之前已经有绑定, 有则先去掉
-      eventSubscribe.off(name, fnKey)
+      this.off(name, fnKey)
     }
 
     // key 关系初始化
-    const eventKey = formatEventKey(name, fnKey)
+    const eventKey = this.formatEventKey(`${name}`, fnKey)
     eventKeyMap.set(eventKey, callback)
 
     if (immediate && name in eventResultMap) {
-      callback(eventResultMap[name])
+      callback(eventResultMap[name] as R)
     }
     return eventKey
-  },
+  }
+
+  /**
+   * 事件多次性订阅, callback
+   * 若返回 true, 则继续定义
+   * 若返回 false， 自动取消订阅
+   * @param name: 事件名称
+   * @param callback: 回调方法
+   * @param immediate: 立刻执行
+   * @returns eventKey 订阅标识, 用于 off
+   * */
+  onceUntil(name: K, callback: EventOnceUntilCallback<R>, immediate?: boolean) {
+    const key = this.on(
+      name,
+      (res) => {
+        if (!callback(res)) {
+          this.off(name, key)
+        }
+      },
+      immediate,
+      this.formatEventKey(`${name}`)
+    )
+    return key
+  }
 
   /**
    * 事件一次性订阅
@@ -64,24 +91,26 @@ export const eventSubscribe = {
    * @param callback: 回调方法
    * @returns eventKey 订阅标识, 用于 off
    * */
-  once<R = any>(name: string, callback: EventCallback<R>) {
-    const key = this.on<R>(
+  once(name: K, callback: EventCallback<R>) {
+    const key = this.on(
       name,
       (res) => {
         this.off(name, key)
         callback(res)
       },
       false,
-      formatEventKey(name)
+      this.formatEventKey(`${name}`)
     )
     return key
-  },
+  }
+
   /**
    * 事件退订
    * @param name: 事件名称
    * @param ctx: 订阅时方法 | 订阅标识
    * */
-  off<R = any>(name: string, ctx: EventCallback<R> | string) {
+  off(name: K, ctx: EventCallback<R> | string) {
+    const { eventFnMap, eventKeyMap } = this
     const eventFns = eventFnMap[name]
     let rFn: EventCallback | undefined
     if (eventFns?.length) {
@@ -99,38 +128,47 @@ export const eventSubscribe = {
         }
       }
     }
-  },
+  }
 
   /**
    * 事件广播
    * @param name: 事件名称
    * @param data: 入参数据
    * */
-  trigger<R = any>(name: string, data: R) {
-    if (name in eventFnMap) {
-      eventFnMap[name].forEach((fn) => {
+  trigger(name: K, data: R) {
+    const { eventFnMap, eventResultMap } = this
+    if (eventFnMap[name]) {
+      eventFnMap[name]?.forEach((fn) => {
         fn(data)
       })
     }
     eventResultMap[name] = data
-  },
+  }
+
   /**
    * 事件回放
    * @param name: 事件名称
    * */
-  replay(name: string) {
-    if (name in eventFnMap && name in eventResultMap) {
+  replay(name: K) {
+    const { eventFnMap, eventResultMap } = this
+    if (eventFnMap[name] && name in eventResultMap) {
       const lastResult = eventResultMap[name]
-      eventFnMap[name].forEach((fn) => {
-        fn(lastResult)
+      eventFnMap[name]?.forEach((fn) => {
+        fn(lastResult as R)
       })
     }
-  },
+  }
 
-  /** reset 清空已绑定的事件 */
   reset() {
-    eventResultMap = {}
-    eventFnMap = {}
-    eventKeyMap.clear()
+    this.destroy()
+  }
+
+  /** destroy 清空已绑定的事件 */
+  destroy() {
+    this.eventResultMap = {}
+    this.eventFnMap = {}
+    this.eventKeyMap.clear()
   }
 }
+
+export const eventSubscribe = new EventSubscribe()
