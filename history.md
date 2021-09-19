@@ -1,5 +1,10 @@
 # 版本变更
 
+## 1.1.0 (2021-09-19)
+
+- feat: 新增 `EventSubscribe<TriggerMap,FilterMap>` 类型定义
+- feat: 添加 `addFilter(key, fn)` 方法, 用于 trigger 后的 事件处理中间件
+
 ## 1.0.0 (2021-09-14)
 
 - feat: 新增 `eventSubscribe.onceUntil(name, fn, immediate)` 函数
