@@ -111,17 +111,26 @@ export class EventSubscribe<
    * @param callback: 回调方法
    * @returns eventKey 订阅标识, 用于 off
    * */
-  once<IK extends K, IR extends F[IK]>(name: IK, callback: EventCallback<IR>) {
-    const key = this.on(
-      name,
-      (res) => {
-        this.off(name, key)
-        callback(res)
-      },
-      false,
-      this.formatEventKey(`${name}`)
-    )
-    return key
+  once<IK extends K, IR extends F[IK]>(name: IK, done: EventCallback<IR>, immediate?: boolean) {
+    const { eventResultMap } = this
+    if (immediate) {
+      const iResult = eventResultMap.get(name)
+      if (iResult) {
+        done(iResult)
+      }
+    } else {
+      const key = this.on(
+        name,
+        (res) => {
+          console.log('callback', key)
+          this.off(name, key)
+          done(res)
+        },
+        immediate,
+        this.formatEventKey(`${name}`)
+      )
+      return key
+    }
   }
 
   /**

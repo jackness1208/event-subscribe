@@ -1,5 +1,9 @@
 # 版本变更
 
+## 1.2.0 (2021-09-19)
+
+- feat: 补充 `once(key, fn, immediate)` 中 `immediate` 属性
+
 ## 1.1.0 (2021-09-19)
 
 - feat: 新增 `EventSubscribe<TriggerMap,FilterMap>` 类型定义
