@@ -10,5 +10,6 @@
     "declarationDir": "./output",
     "declaration": true
   },
-  "include": ["typing/**/*", "src/**.*", "test/**.*"]
+  "include": ["typing/**/*", "src/**.*", "test/**.*"],
+  "exclude": ["test/**.*"]
 }

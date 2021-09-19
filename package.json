@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "main": "output/index.js",
   "module": "output/index.esm.js",
   "types": "output/index.d.ts",
