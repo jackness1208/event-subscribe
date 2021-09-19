@@ -113,16 +113,13 @@ export class EventSubscribe<
    * */
   once<IK extends K, IR extends F[IK]>(name: IK, done: EventCallback<IR>, immediate?: boolean) {
     const { eventResultMap } = this
-    if (immediate) {
-      const iResult = eventResultMap.get(name)
-      if (iResult) {
-        done(iResult)
-      }
+    const iResult = eventResultMap.get(name)
+    if (immediate && iResult) {
+      done(iResult)
     } else {
       const key = this.on(
         name,
         (res) => {
-          console.log('callback', key)
           this.off(name, key)
           done(res)
         },
