@@ -11,9 +11,10 @@ export interface EventFnMap {
   [eventName: string]: EventCallback[]
 }
 export class EventSubscribe<
-  M extends EventResultMap = EventResultMap,
-  K extends keyof M = keyof M,
-  R = M[K]
+  K extends string,
+  M extends Record<K, any>,
+  F extends Record<K, any> = M,
+  R = F[K]
 > {
   private eventResultMap: Partial<Record<K, R>> = {}
   private eventFnMap: Partial<Record<K, EventCallback<R>[]>> = {}
@@ -34,17 +35,17 @@ export class EventSubscribe<
   /**
    * 事件订阅
    * @param name: 事件名称
-   * @param callback: 回调方法
+   * @param done: 回调方法
    * @param immediate: 若订阅之前已经触发过，是否马上执行
    * @param fnKey: 用于去掉订阅时标识
    * @returns eventKey 订阅标识, 用于 off
    * */
-  on(name: K, callback: EventCallback<R>, immediate?: boolean, fnKey?: string) {
+  on(name: K, done: EventCallback<R>, immediate?: boolean, fnKey?: string) {
     const { eventFnMap, eventResultMap, eventKeyMap } = this
     if (eventFnMap[name]) {
-      eventFnMap[name]?.push(callback)
+      eventFnMap[name]?.push(done)
     } else {
-      eventFnMap[name] = [callback]
+      eventFnMap[name] = [done]
     }
 
     if (fnKey) {
@@ -54,10 +55,10 @@ export class EventSubscribe<
 
     // key 关系初始化
     const eventKey = this.formatEventKey(`${name}`, fnKey)
-    eventKeyMap.set(eventKey, callback)
+    eventKeyMap.set(eventKey, done)
 
     if (immediate && name in eventResultMap) {
-      callback(eventResultMap[name] as R)
+      done(eventResultMap[name] as R)
     }
     return eventKey
   }

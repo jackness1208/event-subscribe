@@ -1,8 +1,8 @@
-const { eventSubscribe } = require('../')
+import { eventSubscribe } from '../output'
 
 test('eventSubscribe.on(name, fn) test', () => {
   eventSubscribe.reset()
-  const result = []
+  const result: string[] = []
   eventSubscribe.on('hello', () => {
     result.push('a')
   })
@@ -19,7 +19,7 @@ test('eventSubscribe.on(name, fn) test', () => {
 
 test('eventSubscribe.on(name, fn, immediate) test', () => {
   eventSubscribe.reset()
-  const result = []
+  const result: string[] = []
   eventSubscribe.trigger('hello', '01')
 
   eventSubscribe.on(
@@ -45,7 +45,7 @@ test('eventSubscribe.on(name, fn, immediate) test', () => {
 
 test('eventSubscribe.on(name, fn, immediate, key) test', () => {
   eventSubscribe.reset()
-  const result = []
+  const result: string[] = []
   const eventKey = 'hellocheck'
   eventSubscribe.on(
     'hello',
@@ -73,7 +73,7 @@ test('eventSubscribe.on(name, fn, immediate, key) test', () => {
 
 test('eventSubscribe.replay(name) test', () => {
   eventSubscribe.reset()
-  const result = []
+  const result: string[] = []
   eventSubscribe.trigger('hello', '01')
   eventSubscribe.on('hello', (ctx) => {
     result.push(`a-${ctx}`)
@@ -84,7 +84,7 @@ test('eventSubscribe.replay(name) test', () => {
 
 test('eventSubscribe.off() test', () => {
   eventSubscribe.reset()
-  const result = []
+  const result: string[] = []
   const key = eventSubscribe.on('hello', (ctx) => {
     result.push(`a-${ctx}`)
   })
@@ -97,7 +97,7 @@ test('eventSubscribe.off() test', () => {
 
 test('eventSubscribe.once() test', () => {
   eventSubscribe.reset()
-  const result = []
+  const result: string[] = []
   const key = eventSubscribe.once('hello', (ctx) => {
     result.push(`a-${ctx}`)
   })
@@ -109,7 +109,7 @@ test('eventSubscribe.once() test', () => {
 
 test('eventSubscribe.onceUntil() test', () => {
   eventSubscribe.reset()
-  const result = []
+  const result: string[] = []
   let padding = 0
   const key = eventSubscribe.onceUntil('hello', (ctx) => {
     result.push(`a-${ctx}`)
