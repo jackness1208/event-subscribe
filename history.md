@@ -1,5 +1,9 @@
 # 版本变更
 
+## 1.3.0 (2021-10-19)
+
+- feat: `trigger(event, fn, ignoreUndefined)` 新增 `ignoreUndefined` 参数
+
 ## 1.2.1 (2021-09-20)
 
 - fix: once() bugfix

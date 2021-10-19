@@ -202,3 +202,16 @@ test('eventSubscribe.onceUntil() test', () => {
   eventSubscribe.trigger('hello', '04')
   expect(result).toEqual(['a-01', 'a-02'])
 })
+
+test('eventSubscribe.trigger() ignoreUndefined', () => {
+  eventSubscribe.reset()
+  const result: string[] = []
+  eventSubscribe.on('hello', (txt: string) => {
+    result.push(txt)
+  })
+
+  eventSubscribe.trigger('hello', undefined, true)
+  expect(result).toEqual([])
+  eventSubscribe.trigger('hello', '01', true)
+  expect(result).toEqual(['01'])
+})

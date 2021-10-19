@@ -160,8 +160,9 @@ export class EventSubscribe<
    * 事件广播
    * @param name: 事件名称
    * @param data: 入参数据
+   * @param ignoreUndefined: 避免返回 undefined
    * */
-  async trigger<IK extends K, IR extends M[IK]>(name: IK, data: IR) {
+  async trigger<IK extends K, IR extends M[IK]>(name: IK, data: IR, ignoreUndefined?: boolean) {
     const { eventFnMap, eventResultMap, eventFilterMap } = this
 
     const iFilter = eventFilterMap.get(name)
@@ -170,13 +171,15 @@ export class EventSubscribe<
       result = await iFilter(data)
     }
 
-    const iFns = eventFnMap.get(name)
-    if (iFns) {
-      iFns.forEach((fn) => {
-        fn(result)
-      })
+    if (!ignoreUndefined || ![undefined, null].includes(result)) {
+      const iFns = eventFnMap.get(name)
+      if (iFns) {
+        iFns.forEach((fn) => {
+          fn(result)
+        })
+      }
+      eventResultMap.set(name, result)
     }
-    eventResultMap.set(name, result)
   }
 
   /**
