@@ -58,6 +58,7 @@ export class EventSubscribe<
       eventFnMap.set(name, [done])
     } else {
       iEvents.push(done)
+      eventFnMap.set(name, iEvents)
     }
 
     if (fnKey) {

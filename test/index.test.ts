@@ -90,6 +90,30 @@ test('eventSubscribe.on(name, fn, immediate) test', () => {
   expect(result).toEqual(['a-01', 'a-02', 'b-02', 'c-02'])
 })
 
+test('eventSubscribe.on(name, fn, immediate) once & on', () => {
+  eventSubscribe.reset()
+  const result: string[] = []
+
+  eventSubscribe.once(
+    'hello',
+    (ctx) => {
+      result.push(`a-${ctx}`)
+    },
+    true
+  )
+
+  eventSubscribe.on(
+    'hello',
+    (ctx) => {
+      result.push(`b-${ctx}`)
+    },
+    true
+  )
+  eventSubscribe.trigger('hello', '01')
+
+  expect(result).toEqual(['a-01', 'b-01'])
+})
+
 test('eventSubscribe.on(name, fn, immediate) test argv = undefined', () => {
   eventSubscribe.reset()
   const result: string[] = []
