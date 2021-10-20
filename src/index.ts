@@ -70,9 +70,8 @@ export class EventSubscribe<
     eventKeyMap.set(eventKey, done)
 
     if (immediate) {
-      const iResult = eventResultMap.get(name)
-      if (iResult) {
-        done(iResult)
+      if (eventResultMap.has(name)) {
+        done(eventResultMap.get(name) as IR)
       }
     }
     return eventKey

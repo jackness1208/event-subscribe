@@ -1,5 +1,9 @@
 # 版本变更
 
+## 1.3.1 (2021-10-20)
+
+- fix: 修复`on(event, fn, immidate)` 若之前触发了对应的 event 并返回 undefined 时，事件没被正常触发的问题
+
 ## 1.3.0 (2021-10-19)
 
 - feat: `trigger(event, fn, ignoreUndefined)` 新增 `ignoreUndefined` 参数
