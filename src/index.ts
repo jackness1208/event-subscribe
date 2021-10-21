@@ -58,6 +58,7 @@ export class EventSubscribe<
       eventFnMap.set(name, [done])
     } else {
       iEvents.push(done)
+      eventFnMap.set(name, iEvents)
     }
 
     if (fnKey) {
@@ -122,8 +123,7 @@ export class EventSubscribe<
           this.off(name, key)
           done(res)
         },
-        immediate,
-        this.formatEventKey(`${name}`)
+        immediate
       )
       return key
     }
@@ -173,7 +173,8 @@ export class EventSubscribe<
     if (!ignoreUndefined || ![undefined, null].includes(result)) {
       const iFns = eventFnMap.get(name)
       if (iFns) {
-        iFns.forEach((fn) => {
+        // 防止循环过程中 off 导致后续循环不连续
+        Array.from(iFns).forEach((fn) => {
           fn(result)
         })
       }
