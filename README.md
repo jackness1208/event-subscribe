@@ -129,12 +129,18 @@ export declare type EventOnceUntilCallback<R = any> = (rs: R) => boolean | undef
 export interface EventFnMap {
   [eventName: string]: EventCallback[]
 }
+/** logger 格式 */
+export declare type EventSubscribeLogger = (type: string, eventName: string, args: any[]) => void
+export interface EventSubscribeOption {
+  logger?: EventSubscribeLogger
+}
 export declare class EventSubscribe<
   M extends EventResultMap,
   F extends Record<keyof M, any> = M,
   K extends keyof M = keyof M,
   R extends F[K] = F[K]
 > {
+  private logger
   /** 事件 结果 map */
   private eventResultMap
   /** 事件 filterMap */
@@ -146,6 +152,7 @@ export declare class EventSubscribe<
   private eventKeyPadding
   /** 格式化 事件key */
   private formatEventKey
+  constructor(op?: EventSubscribeOption)
   /**
    * 事件订阅
    * @param name: 事件名称
@@ -180,7 +187,11 @@ export declare class EventSubscribe<
    * @param callback: 回调方法
    * @returns eventKey 订阅标识, 用于 off
    * */
-  once<IK extends K, IR extends F[IK]>(name: IK, callback: EventCallback<IR>): string
+  once<IK extends K, IR extends F[IK]>(
+    name: IK,
+    done: EventCallback<IR>,
+    immediate?: boolean
+  ): string | undefined
   /**
    * 事件退订
    * @param name: 事件名称
@@ -191,8 +202,13 @@ export declare class EventSubscribe<
    * 事件广播
    * @param name: 事件名称
    * @param data: 入参数据
+   * @param ignoreUndefined: 避免返回 undefined
    * */
-  trigger<IK extends K, IR extends M[IK]>(name: IK, data: IR): Promise<void>
+  trigger<IK extends K, IR extends M[IK]>(
+    name: IK,
+    data: IR,
+    ignoreUndefined?: boolean
+  ): Promise<void>
   /**
    * 事件回放
    * @param name: 事件名称

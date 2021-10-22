@@ -13,12 +13,20 @@ export type EventOnceUntilCallback<R = any> = (rs: R) => boolean | undefined
 export interface EventFnMap {
   [eventName: string]: EventCallback[]
 }
+
+/** logger 格式 */
+export type EventSubscribeLogger = (type: string, eventName: string, args: any[]) => void
+
+export interface EventSubscribeOption {
+  logger?: EventSubscribeLogger
+}
 export class EventSubscribe<
   M extends EventResultMap,
   F extends Record<keyof M, any> = M,
   K extends keyof M = keyof M,
   R extends F[K] = F[K]
 > {
+  private logger: EventSubscribeLogger = function () {}
   /** 事件 结果 map */
   private eventResultMap: Map<K, R> = new Map()
   /** 事件 filterMap */
@@ -35,6 +43,12 @@ export class EventSubscribe<
       return `${fnKey}`
     } else {
       return `${name}-${this.eventKeyPadding++}`
+    }
+  }
+
+  constructor(op?: EventSubscribeOption) {
+    if (op?.logger) {
+      this.logger = op.logger
     }
   }
 
@@ -168,6 +182,9 @@ export class EventSubscribe<
     let result: M[K] | R = data
     if (iFilter) {
       result = await iFilter(data)
+      this.logger('trigger', `${name}`, [data, '=>', result])
+    } else {
+      this.logger('trigger', `${name}`, [result])
     }
 
     if (!ignoreUndefined || ![undefined, null].includes(result)) {
