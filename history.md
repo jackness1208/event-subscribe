@@ -1,5 +1,9 @@
 # 版本变更
 
+## 1.5.1 (2021-11-02)
+
+- fix: `op.eventWithPreserve` 改为选填项
+
 ## 1.5.0 (2021-11-01)
 
 - feat: 新增 `new EventSubscribe(op)` `op.eventWithPreserve` 属性

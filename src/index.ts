@@ -19,7 +19,7 @@ export type EventSubscribeLogger = (type: string, eventName: string, args: any[]
 
 export interface EventSubscribeOption<M extends EventResultMap> {
   /** 搭配 onWithPreserve 使用，记录列表事件的完整log */
-  eventWithPreserve: (keyof M)[]
+  eventWithPreserve?: (keyof M)[]
   logger?: EventSubscribeLogger
 }
 export class EventSubscribe<
