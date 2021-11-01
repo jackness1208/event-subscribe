@@ -17,7 +17,9 @@ export interface EventFnMap {
 /** logger 格式 */
 export type EventSubscribeLogger = (type: string, eventName: string, args: any[]) => void
 
-export interface EventSubscribeOption {
+export interface EventSubscribeOption<M extends EventResultMap> {
+  /** 搭配 onWithPreserve 使用，记录列表事件的完整log */
+  eventWithPreserve: (keyof M)[]
   logger?: EventSubscribeLogger
 }
 export class EventSubscribe<
@@ -36,6 +38,18 @@ export class EventSubscribe<
   private eventKeyMap: Map<string, EventCallback<R>> = new Map()
   /** 事件key */
   private eventKeyPadding: number = 0
+  /** 搭配 onWithPreserve 使用，记录列表事件的完整log */
+  private eventWithPreserve: (keyof M)[] = []
+  private eventWithPreserveMap: Map<K, F[K][]> = new Map()
+  /** 初始化 */
+  constructor(op?: EventSubscribeOption<M>) {
+    if (op?.eventWithPreserve) {
+      this.eventWithPreserve = op.eventWithPreserve
+    }
+    if (op?.logger) {
+      this.logger = op.logger
+    }
+  }
 
   /** 格式化 事件key */
   private formatEventKey(name: string, fnKey?: string) {
@@ -46,10 +60,43 @@ export class EventSubscribe<
     }
   }
 
-  constructor(op?: EventSubscribeOption) {
-    if (op?.logger) {
-      this.logger = op.logger
+  /** 添加历史记录 */
+  private markPreserve(name: K, data: R) {
+    const needMark = this.eventWithPreserve.includes(name)
+    if (!needMark) {
+      return
     }
+    const datas: R[] = this.eventWithPreserveMap.get(name) || []
+    datas.push(data)
+    this.eventWithPreserveMap.set(name, datas)
+  }
+
+  /**
+   * 事件订阅（包含订阅前已触发的日志）
+   * 需搭配 op.eventWithPreserve 使用
+   * @param name: 事件名称
+   * @param done: 回调方法
+   * @param fnKey: 用于去掉订阅时标识
+   * @returns eventKey 订阅标识, 用于 off
+   */
+  onWithPreserve<IK extends K, IR = F[IK]>(name: IK, done: EventCallback<IR>, fnKey?: string) {
+    const preserveLogs = this.eventWithPreserveMap.get(name)
+    if (preserveLogs?.length) {
+      preserveLogs.forEach((ctx) => {
+        done(ctx)
+      })
+    }
+    return this.on(name, done, false, fnKey)
+  }
+
+  /**
+   * 获取历史记录
+   * 需搭配 op.eventWithPreserve 使用
+   * @param name: 事件名称
+   * @returns 事件返回 arr
+   */
+  getPreserve(name: K): F[K][] {
+    return this.eventWithPreserveMap.get(name) || []
   }
 
   /**
@@ -197,6 +244,8 @@ export class EventSubscribe<
       }
       eventResultMap.set(name, result)
     }
+    // 添加历史记录（如需要）
+    this.markPreserve(name, data)
   }
 
   /**
@@ -237,6 +286,7 @@ export class EventSubscribe<
     this.eventResultMap.clear()
     this.eventFnMap.clear()
     this.eventKeyMap.clear()
+    this.eventWithPreserveMap.clear()
   }
 }
 

@@ -113,6 +113,22 @@ eventSubscribe.on(
 eventSubscribe.off('hello', eventKey)
 ```
 
+历史记录
+
+```typescript
+import { EventSubscribe } from 'event-subscribe'
+const iBridge = new EventSubscribe({
+  eventWithPreserve: ['log']
+})
+
+iBridge.trigger('log', 'hello 01')
+iBridge.trigger('log', 'hello 02')
+iBridge.onWithPreserve('log', (ctx) => {
+  console.log('ctx') // hello 01, hello 02
+})
+console.log(iBridge.getPreserve('log')) // [hello 01, hello 02]
+```
+
 ## types
 
 ```typescript
