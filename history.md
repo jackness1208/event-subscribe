@@ -1,5 +1,11 @@
 # 版本变更
 
+## 1.5.0 (2021-11-01)
+
+- feat: 新增 `new EventSubscribe(op)` `op.eventWithPreserve` 属性
+- feat: 新增 `onWithPreserve` 方法, 配合 `op.eventWithPreserve` 使用
+- feat: 新增 `getPreserve` 方法, 配合 `op.eventWithPreserve` 使用
+
 ## 1.4.0 (2021-10-22)
 
 - feat: 补充 `new EventSubscribe({ logger })` `logger` 属性
