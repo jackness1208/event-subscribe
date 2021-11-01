@@ -95,7 +95,7 @@ export class EventSubscribe<
    * @param name: 事件名称
    * @returns 事件返回 arr
    */
-  getPreserve(name: K): F[K][] {
+  getPreserve<IK extends K, IR = F[IK]>(name: IK): IR[] {
     return this.eventWithPreserveMap.get(name) || []
   }
 
