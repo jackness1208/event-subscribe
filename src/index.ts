@@ -247,15 +247,21 @@ export class EventSubscribe<
    * @param ignoreUndefined: 避免返回 undefined
    * */
   async trigger<IK extends K, IR extends M[IK]>(name: IK, data: IR, ignoreUndefined?: boolean) {
-    const { eventFnMap, eventResultMap, eventFilterMap } = this
+    const { eventFnMap, eventResultMap, eventFilterMap, eventWithPreserve } = this
 
     const iFilter = eventFilterMap.get(name)
     let result: M[K] | R = data
     if (iFilter) {
       result = await iFilter(data)
-      this.logger('trigger', `${name}`, [data, '=>', result])
+      // 避免死循环
+      if (!eventWithPreserve.includes(name)) {
+        this.logger('trigger', `${name}`, [data, '=>', result])
+      }
     } else {
-      this.logger('trigger', `${name}`, [result])
+      // 避免死循环
+      if (!eventWithPreserve.includes(name)) {
+        this.logger('trigger', `${name}`, [result])
+      }
     }
 
     if (!ignoreUndefined || ![undefined, null].includes(result)) {
