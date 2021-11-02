@@ -14,13 +14,30 @@ export interface EventFnMap {
   [eventName: string]: EventCallback[]
 }
 
+/** logger type */
+export type EventSubscribeLoggerType =
+  | 'addFilter'
+  | 'replay'
+  | 'trigger'
+  | 'destroy'
+  | 'on'
+  | 'off'
+  | 'once'
+  | 'onceUntil'
+  | 'onWithPreserve'
+  | 'getPreserve'
+
 /** logger 格式 */
-export type EventSubscribeLogger = (type: string, eventName: string, args: any[]) => void
+export type EventSubscribeLogger<M extends EventResultMap> = (
+  type: EventSubscribeLoggerType,
+  eventName: keyof M,
+  args: any[]
+) => void
 
 export interface EventSubscribeOption<M extends EventResultMap> {
   /** 搭配 onWithPreserve 使用，记录列表事件的完整log */
   eventWithPreserve?: (keyof M)[]
-  logger?: EventSubscribeLogger
+  logger?: EventSubscribeLogger<M>
 }
 export class EventSubscribe<
   M extends EventResultMap,
@@ -28,7 +45,7 @@ export class EventSubscribe<
   K extends keyof M = keyof M,
   R extends F[K] = F[K]
 > {
-  private logger: EventSubscribeLogger = function () {}
+  private logger: EventSubscribeLogger<M> = function () {}
   /** 事件 结果 map */
   private eventResultMap: Map<K, R> = new Map()
   /** 事件 filterMap */
@@ -80,6 +97,7 @@ export class EventSubscribe<
    * @returns eventKey 订阅标识, 用于 off
    */
   onWithPreserve<IK extends K, IR = F[IK]>(name: IK, done: EventCallback<IR>, fnKey?: string) {
+    this.logger('onWithPreserve', name, [`fnKey: ${fnKey}`])
     const preserveLogs = this.eventWithPreserveMap.get(name)
     if (preserveLogs?.length) {
       preserveLogs.forEach((ctx) => {
@@ -96,7 +114,9 @@ export class EventSubscribe<
    * @returns 事件返回 arr
    */
   getPreserve<IK extends K, IR = F[IK]>(name: IK): IR[] {
-    return this.eventWithPreserveMap.get(name) || []
+    const r = this.eventWithPreserveMap.get(name) || []
+    this.logger('getPreserve', name, ['r:', r])
+    return r
   }
 
   /**
@@ -113,6 +133,7 @@ export class EventSubscribe<
     immediate?: boolean,
     fnKey?: string
   ) {
+    this.logger('on', name, [`immediate: ${immediate}`, `fnKey: ${fnKey}`])
     const { eventFnMap, eventResultMap, eventKeyMap } = this
     const iEvents = eventFnMap.get(name)
     if (!iEvents) {
@@ -153,6 +174,7 @@ export class EventSubscribe<
     callback: EventOnceUntilCallback<IR>,
     immediate?: boolean
   ) {
+    this.logger('onceUntil', name, [`immediate: ${immediate}`])
     const key = this.on(
       name,
       (res) => {
@@ -173,6 +195,7 @@ export class EventSubscribe<
    * @returns eventKey 订阅标识, 用于 off
    * */
   once<IK extends K, IR extends F[IK]>(name: IK, done: EventCallback<IR>, immediate?: boolean) {
+    this.logger('once', name, [`immediate: ${immediate}`])
     const { eventResultMap } = this
     const iResult = eventResultMap.get(name)
     if (immediate && iResult) {
@@ -196,6 +219,7 @@ export class EventSubscribe<
    * @param ctx: 订阅时方法 | 订阅标识
    * */
   off<IK extends K, IR extends F[IK]>(name: IK, ctx: EventCallback<IR> | string) {
+    this.logger('off', name, [`ctx: ${ctx}`])
     const { eventFnMap, eventKeyMap } = this
     const eventFns = eventFnMap.get(name)
     let rFn: EventCallback | undefined
@@ -243,9 +267,9 @@ export class EventSubscribe<
         })
       }
       eventResultMap.set(name, result)
+      // 添加历史记录（如需要）
+      this.markPreserve(name, result)
     }
-    // 添加历史记录（如需要）
-    this.markPreserve(name, data)
   }
 
   /**
@@ -253,6 +277,7 @@ export class EventSubscribe<
    * @param name: 事件名称
    * */
   replay<IK extends K>(name: IK) {
+    this.logger('replay', name, [])
     const { eventFnMap, eventResultMap, eventFilterMap } = this
     const iFns = eventFnMap.get(name)
     if (iFns && eventResultMap.has(name)) {
@@ -272,6 +297,7 @@ export class EventSubscribe<
     name: IK,
     done: FilterCallback<IM, IR>
   ) {
+    this.logger('addFilter', name, [])
     const { eventFilterMap } = this
     eventFilterMap.set(name, done)
   }
@@ -283,6 +309,7 @@ export class EventSubscribe<
 
   /** destroy 清空已绑定的事件 */
   destroy() {
+    this.logger('destroy', '', [])
     this.eventResultMap.clear()
     this.eventFnMap.clear()
     this.eventKeyMap.clear()
