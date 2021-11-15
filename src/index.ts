@@ -58,6 +58,10 @@ export class EventSubscribe<
   /** 搭配 onWithPreserve 使用，记录列表事件的完整log */
   private eventWithPreserve: (keyof M)[] = []
   private eventWithPreserveMap: Map<K, F[K][]> = new Map()
+  /** 订阅全部事件的 fns */
+  private eventEachFnMap: Map<string, (type: K, data: R) => void> = new Map()
+  /** 订阅全部事件的 历史记录列表 (用于 onEach()) */
+  private eventEachPreserves: { name: K; data: R }[] = []
   /** 初始化 */
   constructor(op?: EventSubscribeOption<M>) {
     if (op?.eventWithPreserve) {
@@ -117,6 +121,82 @@ export class EventSubscribe<
     const r = this.eventWithPreserveMap.get(name) || []
     this.logger('getPreserve', name, ['r:', r])
     return r
+  }
+
+  /**
+   * 订阅所有已绑定事件
+   * @param fn: 回调方法
+   * @returns eventKey 订阅标识, 用于 offEach
+   * */
+  onEach<IK extends K, IR = F[IK]>(
+    fn: (type: IK, data: IR) => void,
+    immediate?: boolean,
+    fnKey?: string
+  ) {
+    // this.eventAllFns.push(fn as () => void)
+    if (fnKey) {
+      // 查看是否之前已经有绑定, 有则先去掉
+      this.offEach(fnKey)
+    }
+    // key 关系初始化
+    const eventKey = this.formatEventKey(`__each`, fnKey)
+    this.eventEachFnMap.set(eventKey, fn as () => void)
+
+    // 把历史记录上的都触发一次
+    if (immediate) {
+      this.eventEachPreserves.forEach(({ name, data }) => {
+        fn(name as IK, data)
+      })
+    }
+    return eventKey
+  }
+
+  /**
+   * 退订阅通过 onEach 绑定的事件
+   * @param ctx: 订阅时方法 | 订阅标识
+   * @returns eventKey 订阅标识, 用于 offAll
+   * */
+  offEach(ctx: string | ((...args: any[]) => void)) {
+    if (typeof ctx === 'string') {
+      const iFn = this.eventEachFnMap.get(ctx)
+      if (iFn) {
+        this.eventEachFnMap.delete(ctx)
+      }
+    } else {
+      Array.from(this.eventEachFnMap.keys()).forEach((key) => {
+        const iFn = this.eventEachFnMap.get(key)
+        if (iFn && iFn === ctx) {
+          this.eventEachFnMap.delete(key)
+        }
+      })
+    }
+  }
+
+  /**
+   * onEach 事件广播
+   * @param name: 事件名称
+   * @param data: 入参数据
+   * */
+  private triggerEach<IK extends K, IR extends M[IK]>(name: K, data: IR) {
+    // 把已经订阅 onEach 的都触发一次
+    Array.from(this.eventEachFnMap.keys()).forEach((key) => {
+      const iFn = this.eventEachFnMap.get(key)
+      if (iFn) {
+        iFn(name, data)
+      }
+    })
+
+    // 去掉之前触发过的
+    for (let i = 0; i < this.eventEachPreserves.length; i) {
+      const iObj = this.eventEachPreserves[i]
+      if (iObj.name === name) {
+        this.eventEachPreserves.splice(i, 1)
+      } else {
+        i++
+      }
+    }
+    // 添加 preserves
+    this.eventEachPreserves.push({ name, data })
   }
 
   /**
@@ -275,6 +355,8 @@ export class EventSubscribe<
       eventResultMap.set(name, result)
       // 添加历史记录（如需要）
       this.markPreserve(name, result)
+      // 触发 onEach
+      this.triggerEach(name, result)
     }
   }
 
@@ -319,7 +401,9 @@ export class EventSubscribe<
     this.eventResultMap.clear()
     this.eventFnMap.clear()
     this.eventKeyMap.clear()
+    this.eventEachPreserves = []
     this.eventWithPreserveMap.clear()
+    this.eventEachFnMap.clear()
   }
 }
 
