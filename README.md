@@ -129,6 +129,24 @@ iBridge.onWithPreserve('log', (ctx) => {
 console.log(iBridge.getPreserve('log')) // [hello 01, hello 02]
 ```
 
+监听所有事件的触发
+
+```typescript
+import { EventSubscribe } from 'event-subscribe'
+const iBridge = new EventSubscribe()
+
+iBridge.trigger('hello', 1)
+iBridge.trigger('world', 2)
+
+// 订阅
+const key = iBridge.onEach((type, data) => {
+  console.log(`${type}-${data}`) // hello-1, world-2
+}, true)
+
+// 取消订阅
+iBridge.offEach(key)
+```
+
 ## types
 
 ```typescript
@@ -145,10 +163,28 @@ export declare type EventOnceUntilCallback<R = any> = (rs: R) => boolean | undef
 export interface EventFnMap {
   [eventName: string]: EventCallback[]
 }
+/** logger type */
+export declare type EventSubscribeLoggerType =
+  | 'addFilter'
+  | 'replay'
+  | 'trigger'
+  | 'destroy'
+  | 'on'
+  | 'off'
+  | 'once'
+  | 'onceUntil'
+  | 'onWithPreserve'
+  | 'getPreserve'
 /** logger 格式 */
-export declare type EventSubscribeLogger = (type: string, eventName: string, args: any[]) => void
-export interface EventSubscribeOption {
-  logger?: EventSubscribeLogger
+export declare type EventSubscribeLogger<M extends EventResultMap> = (
+  type: EventSubscribeLoggerType,
+  eventName: keyof M,
+  args: any[]
+) => void
+export interface EventSubscribeOption<M extends EventResultMap> {
+  /** 搭配 onWithPreserve 使用，记录列表事件的完整log */
+  eventWithPreserve?: (keyof M)[]
+  logger?: EventSubscribeLogger<M>
 }
 export declare class EventSubscribe<
   M extends EventResultMap,
@@ -166,9 +202,61 @@ export declare class EventSubscribe<
   private eventKeyMap
   /** 事件key */
   private eventKeyPadding
+  /** 搭配 onWithPreserve 使用，记录列表事件的完整log */
+  private eventWithPreserve
+  private eventWithPreserveMap
+  /** 订阅全部事件的 fns */
+  private eventEachFnMap
+  /** 订阅全部事件的 历史记录列表 (用于 onEach()) */
+  private eventEachPreserves
+  /** 初始化 */
+  constructor(op?: EventSubscribeOption<M>)
   /** 格式化 事件key */
   private formatEventKey
-  constructor(op?: EventSubscribeOption)
+  /** 添加历史记录 */
+  private markPreserve
+  /**
+   * 事件订阅（包含订阅前已触发的日志）
+   * 需搭配 op.eventWithPreserve 使用
+   * @param name: 事件名称
+   * @param done: 回调方法
+   * @param fnKey: 用于去掉订阅时标识
+   * @returns eventKey 订阅标识, 用于 off
+   */
+  onWithPreserve<IK extends K, IR = F[IK]>(
+    name: IK,
+    done: EventCallback<IR>,
+    fnKey?: string
+  ): string
+  /**
+   * 获取历史记录
+   * 需搭配 op.eventWithPreserve 使用
+   * @param name: 事件名称
+   * @returns 事件返回 arr
+   */
+  getPreserve<IK extends K, IR = F[IK]>(name: IK): IR[]
+  /**
+   * 订阅所有已绑定事件
+   * @param fn: 回调方法
+   * @returns eventKey 订阅标识, 用于 offEach
+   * */
+  onEach<IK extends K, IR = F[IK]>(
+    fn: (type: IK, data: IR) => void,
+    immediate?: boolean,
+    fnKey?: string
+  ): string
+  /**
+   * 退订阅通过 onEach 绑定的事件
+   * @param ctx: 订阅时方法 | 订阅标识
+   * @returns eventKey 订阅标识, 用于 offAll
+   * */
+  offEach(ctx: string | ((...args: any[]) => void)): void
+  /**
+   * onEach 事件广播
+   * @param name: 事件名称
+   * @param data: 入参数据
+   * */
+  private triggerEach
   /**
    * 事件订阅
    * @param name: 事件名称
