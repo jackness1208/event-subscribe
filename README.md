@@ -147,6 +147,23 @@ const key = iBridge.onEach((type, data) => {
 iBridge.offEach(key)
 ```
 
+订阅 销毁事件
+
+```typescript
+import { EventSubscribe } from 'event-subscribe'
+const iBridge = new EventSubscribe()
+// 订阅 bridge 销毁
+const key = iBridge.onDestroy(() => {
+  console.log('destroy')
+})
+
+// 取消订阅
+iBridge.offDestroy(key)
+
+// 触发 bridge 销毁
+iBridge.destroy()
+```
+
 ## types
 
 ```typescript
@@ -205,6 +222,8 @@ export declare class EventSubscribe<
   /** 搭配 onWithPreserve 使用，记录列表事件的完整log */
   private eventWithPreserve
   private eventWithPreserveMap
+  /** destroy 时回调Fns */
+  private eventDestroyFnMap
   /** 订阅全部事件的 fns */
   private eventEachFnMap
   /** 订阅全部事件的 历史记录列表 (用于 onEach()) */
@@ -257,6 +276,10 @@ export declare class EventSubscribe<
    * @param data: 入参数据
    * */
   private triggerEach
+  /** destroy 订阅 */
+  onDestroy(fn: () => void, fnKey?: string): string
+  /** 取消 destroy 订阅 */
+  offDestroy(ctx: string | ((...args: any[]) => void)): void
   /**
    * 事件订阅
    * @param name: 事件名称
