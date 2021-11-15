@@ -58,6 +58,9 @@ export class EventSubscribe<
   /** 搭配 onWithPreserve 使用，记录列表事件的完整log */
   private eventWithPreserve: (keyof M)[] = []
   private eventWithPreserveMap: Map<K, F[K][]> = new Map()
+
+  /** destroy 时回调Fns */
+  private eventDestroyFnMap: Map<string, () => void> = new Map()
   /** 订阅全部事件的 fns */
   private eventEachFnMap: Map<string, (type: K, data: R) => void> = new Map()
   /** 订阅全部事件的 历史记录列表 (用于 onEach()) */
@@ -197,6 +200,36 @@ export class EventSubscribe<
     }
     // 添加 preserves
     this.eventEachPreserves.push({ name, data })
+  }
+
+  /** destroy 订阅 */
+  public onDestroy(fn: () => void, fnKey?: string) {
+    // this.eventAllFns.push(fn as () => void)
+    if (fnKey) {
+      // 查看是否之前已经有绑定, 有则先去掉
+      this.offDestroy(fnKey)
+    }
+    // key 关系初始化
+    const eventKey = this.formatEventKey(`__destroy`, fnKey)
+    this.eventDestroyFnMap.set(eventKey, fn)
+    return eventKey
+  }
+
+  /** 取消 destroy 订阅 */
+  public offDestroy(ctx: string | ((...args: any[]) => void)) {
+    if (typeof ctx === 'string') {
+      const iFn = this.eventDestroyFnMap.get(ctx)
+      if (iFn) {
+        this.eventDestroyFnMap.delete(ctx)
+      }
+    } else {
+      Array.from(this.eventDestroyFnMap.keys()).forEach((key) => {
+        const iFn = this.eventDestroyFnMap.get(key)
+        if (iFn && iFn === ctx) {
+          this.eventDestroyFnMap.delete(key)
+        }
+      })
+    }
   }
 
   /**
@@ -404,6 +437,13 @@ export class EventSubscribe<
     this.eventEachPreserves = []
     this.eventWithPreserveMap.clear()
     this.eventEachFnMap.clear()
+
+    // 调用 onDestroy 绑定的事件
+    Array.from(this.eventDestroyFnMap.keys()).forEach((key) => {
+      const iFn = this.eventDestroyFnMap.get(key)
+      iFn && iFn()
+    })
+    this.eventDestroyFnMap.clear()
   }
 }
 
