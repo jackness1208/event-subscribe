@@ -448,3 +448,6 @@ export class EventSubscribe<
 }
 
 export const eventSubscribe = new EventSubscribe()
+
+module.exports.EventSubscribe = EventSubscribe
+module.exports.eventSubscribe = eventSubscribe
