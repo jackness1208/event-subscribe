@@ -449,5 +449,7 @@ export class EventSubscribe<
 
 export const eventSubscribe = new EventSubscribe()
 
-module.exports.EventSubscribe = EventSubscribe
-module.exports.eventSubscribe = eventSubscribe
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports.EventSubscribe = EventSubscribe
+  module.exports.eventSubscribe = eventSubscribe
+}
