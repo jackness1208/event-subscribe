@@ -423,6 +423,11 @@ export class EventSubscribe<
     eventFilterMap.set(name, done)
   }
 
+  /** 获取事件 cache */
+  getCache(key: K) {
+    return this.eventResultMap.get(key)
+  }
+
   /** 同 destroy */
   reset() {
     this.destroy()

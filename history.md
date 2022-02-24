@@ -1,5 +1,9 @@
 # 版本变更
 
+## 1.8.0 (2022-02-24)
+
+- feat: 新增 getCache() 方法
+
 ## 1.7.2 (2021-12-14)
 
 - feat: module.exports bugfix
