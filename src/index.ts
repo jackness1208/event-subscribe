@@ -424,8 +424,8 @@ export class EventSubscribe<
   }
 
   /** 获取事件 cache */
-  getCache(key: K) {
-    return this.eventResultMap.get(key)
+  getCache<IK extends K, IM extends M[IK]>(key: IK) {
+    return this.eventResultMap.get(key) as IM | undefined
   }
 
   /** 同 destroy */
