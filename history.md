@@ -1,5 +1,9 @@
 # 版本变更
 
+## 1.8.3 (2022-02-24)
+
+- feat: 调整 getCache() 提前 trigger 时 setCache 时机
+
 ## 1.8.2 (2022-02-24)
 
 - feat: 调整 getCache() types

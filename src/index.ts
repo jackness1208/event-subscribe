@@ -262,7 +262,7 @@ export class EventSubscribe<
     }
 
     // key 关系初始化
-    const eventKey = this.formatEventKey(`${name}`, fnKey)
+    const eventKey = this.formatEventKey(`${String(name)}`, fnKey)
     eventKeyMap.set(eventKey, done)
 
     if (immediate) {
@@ -296,7 +296,7 @@ export class EventSubscribe<
         }
       },
       immediate,
-      this.formatEventKey(`${name}`)
+      this.formatEventKey(`${String(name)}`)
     )
     return key
   }
@@ -368,16 +368,17 @@ export class EventSubscribe<
       result = await iFilter(data)
       // 避免死循环
       if (!eventWithPreserve.includes(name)) {
-        this.logger('trigger', `${name}`, [data, '=>', result])
+        this.logger('trigger', `${String(name)}`, [data, '=>', result])
       }
     } else {
       // 避免死循环
       if (!eventWithPreserve.includes(name)) {
-        this.logger('trigger', `${name}`, [result])
+        this.logger('trigger', `${String(name)}`, [result])
       }
     }
 
     if (!ignoreUndefined || ![undefined, null].includes(result)) {
+      eventResultMap.set(name, result)
       const iFns = eventFnMap.get(name)
       if (iFns) {
         // 防止循环过程中 off 导致后续循环不连续
@@ -385,7 +386,6 @@ export class EventSubscribe<
           fn(result)
         })
       }
-      eventResultMap.set(name, result)
       // 添加历史记录（如需要）
       this.markPreserve(name, result)
       // 触发 onEach
