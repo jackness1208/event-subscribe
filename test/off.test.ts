@@ -1,4 +1,4 @@
-import { EventSubscribe } from '../output'
+import { EventSubscribe } from '../src/index'
 test('eventSubscribe.off() test', () => {
   const iBridge = new EventSubscribe()
   iBridge.reset()

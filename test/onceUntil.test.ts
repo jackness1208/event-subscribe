@@ -1,4 +1,4 @@
-import { EventSubscribe } from '../output'
+import { EventSubscribe } from '../src/index'
 test('eventSubscribe.onceUntil() test', () => {
   const eventSubscribe = new EventSubscribe()
   eventSubscribe.reset()

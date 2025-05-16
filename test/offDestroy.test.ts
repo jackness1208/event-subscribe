@@ -1,4 +1,4 @@
-import { EventSubscribe } from '../output'
+import { EventSubscribe } from '../src/index'
 test('eventSubscribe.offDestroy(key) test', () => {
   interface EventResultMap {
     hello: number

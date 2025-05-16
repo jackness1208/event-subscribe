@@ -1,4 +1,4 @@
-import { EventSubscribe } from '../output'
+import { EventSubscribe } from '../src/index'
 test('eventSubscribe.onEach(fn) test', () => {
   interface EventResultMap {
     hello: number

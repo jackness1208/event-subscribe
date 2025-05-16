@@ -37,6 +37,8 @@ export type EventSubscribeLogger<M extends EventResultMap> = (
 export interface EventSubscribeOption<M extends EventResultMap> {
   /** 搭配 onWithPreserve 使用，记录列表事件的完整log */
   eventWithPreserve?: (keyof M)[]
+  /** log 存储上限 */
+  eventWithPreserveLimit?: number
   logger?: EventSubscribeLogger<M>
 }
 export class EventSubscribe<
@@ -58,6 +60,8 @@ export class EventSubscribe<
   /** 搭配 onWithPreserve 使用，记录列表事件的完整log */
   private eventWithPreserve: (keyof M)[] = []
   private eventWithPreserveMap: Map<K, F[K][]> = new Map()
+  /** 完整log 的上限 */
+  private eventWithPreserveLimit: number = 500
 
   /** destroy 时回调Fns */
   private eventDestroyFnMap: Map<string, () => void> = new Map()
@@ -69,6 +73,9 @@ export class EventSubscribe<
   constructor(op?: EventSubscribeOption<M>) {
     if (op?.eventWithPreserve) {
       this.eventWithPreserve = op.eventWithPreserve
+    }
+    if (op?.eventWithPreserveLimit !== undefined) {
+      this.eventWithPreserveLimit = op.eventWithPreserveLimit
     }
     if (op?.logger) {
       this.logger = op.logger
@@ -91,7 +98,13 @@ export class EventSubscribe<
       return
     }
     const datas: R[] = this.eventWithPreserveMap.get(name) || []
+
+    // 当超过上限时，移除最旧的数据
+    if (datas.length + 1 > this.eventWithPreserveLimit) {
+      datas.splice(0, datas.length - this.eventWithPreserveLimit + 1)
+    }
     datas.push(data)
+
     this.eventWithPreserveMap.set(name, datas)
   }
 

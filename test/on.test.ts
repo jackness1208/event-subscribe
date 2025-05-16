@@ -1,4 +1,4 @@
-import { EventSubscribe } from '../output'
+import { EventSubscribe } from '../src/index'
 test('eventSubscribe.on(name, fn) test', () => {
   const eventSubscribe = new EventSubscribe()
   const result: string[] = []

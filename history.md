@@ -1,5 +1,9 @@
 # 版本变更
 
+## 1.8.4 (2025-05-16)
+
+- feat: 新增 `onWithPreserveLimit` 参数，用于设置保存历史消息的最大条数
+
 ## 1.8.3 (2022-02-24)
 
 - feat: 调整 getCache() 提前 trigger 时 setCache 时机
