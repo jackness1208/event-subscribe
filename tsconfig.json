@@ -5,6 +5,7 @@
     "module": "ES2015",
     "strict": true,
     "jsx": "react",
+    "skipLibCheck": true,
     "esModuleInterop": true,
     "lib": ["dom", "es2015", "scripthost"],
     "declarationDir": "./output",
