@@ -475,12 +475,27 @@ export class EventSubscribe<
       const eventKeys = Array.from(eventKeyMap.keys()).filter((key) => {
         return key.startsWith(prefix)
       })
+
+      // off 清除逻辑
       eventNames.forEach((name) => {
+        const eventFns = eventFnMap.get(name)
+        if (!eventFns) {
+          return
+        }
         eventKeys.forEach((fnKey) => {
-          this.off(name, fnKey)
+          const rFn = eventKeyMap.get(fnKey)
+          if (rFn) {
+            const rFnIndex = eventFns.indexOf(rFn)
+
+            if (rFnIndex !== -1) {
+              eventFns.splice(rFnIndex, 1)
+            }
+          }
         })
       })
-      this.offEach('')
+
+      // TODO: onEach 事件绑定处理
+      // TODO: onDestroy 事件绑定处理
     } else {
       this.eventResultMap.clear()
       this.eventFnMap.clear()
