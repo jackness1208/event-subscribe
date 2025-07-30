@@ -39,6 +39,8 @@ export interface EventSubscribeOption<M extends EventResultMap> {
   eventWithPreserve?: (keyof M)[]
   /** log 存储上限 */
   eventWithPreserveLimit?: number
+  /** 自动事件绑定前缀 */
+  autoEventPrefix?: () => string
   logger?: EventSubscribeLogger<M>
 }
 export class EventSubscribe<
@@ -63,6 +65,9 @@ export class EventSubscribe<
   /** 完整log 的上限 */
   private eventWithPreserveLimit: number = 500
 
+  /** 自动事件绑定前缀 */
+  private autoEventPrefix = () => ''
+
   /** destroy 时回调Fns */
   private eventDestroyFnMap: Map<string, () => void> = new Map()
   /** 订阅全部事件的 fns */
@@ -80,14 +85,26 @@ export class EventSubscribe<
     if (op?.logger) {
       this.logger = op.logger
     }
+    if (op?.autoEventPrefix) {
+      this.autoEventPrefix = op.autoEventPrefix
+    }
   }
 
   /** 格式化 事件key */
   private formatEventKey(name: string, fnKey?: string) {
-    if (fnKey) {
-      return `${fnKey}`
+    const prefix = this.autoEventPrefix()
+    if (prefix) {
+      if (fnKey) {
+        return `${prefix}-${fnKey}`
+      } else {
+        return `${prefix}-${name}-${this.eventKeyPadding++}`
+      }
     } else {
-      return `${name}-${this.eventKeyPadding++}`
+      if (fnKey) {
+        return fnKey
+      } else {
+        return `${name}-${this.eventKeyPadding++}`
+      }
     }
   }
 
@@ -174,9 +191,10 @@ export class EventSubscribe<
    * */
   offEach(ctx: string | ((...args: any[]) => void)) {
     if (typeof ctx === 'string') {
-      const iFn = this.eventEachFnMap.get(ctx)
+      const eventKey = this.formatEventKey(`__each`, ctx)
+      const iFn = this.eventEachFnMap.get(eventKey)
       if (iFn) {
-        this.eventEachFnMap.delete(ctx)
+        this.eventEachFnMap.delete(eventKey)
       }
     } else {
       Array.from(this.eventEachFnMap.keys()).forEach((key) => {
@@ -449,19 +467,35 @@ export class EventSubscribe<
   /** destroy 清空已绑定的事件 */
   destroy() {
     this.logger('destroy', '', [])
-    this.eventResultMap.clear()
-    this.eventFnMap.clear()
-    this.eventKeyMap.clear()
-    this.eventEachPreserves = []
-    this.eventWithPreserveMap.clear()
-    this.eventEachFnMap.clear()
+    const prefix = this.autoEventPrefix()
+    if (prefix) {
+      // 只清除当前prefix 绑定的事件
+      const { eventFnMap, eventKeyMap } = this
+      const eventNames = Array.from(eventFnMap.keys())
+      const eventKeys = Array.from(eventKeyMap.keys()).filter((key) => {
+        return key.startsWith(prefix)
+      })
+      eventNames.forEach((name) => {
+        eventKeys.forEach((fnKey) => {
+          this.off(name, fnKey)
+        })
+      })
+      this.offEach('')
+    } else {
+      this.eventResultMap.clear()
+      this.eventFnMap.clear()
+      this.eventKeyMap.clear()
+      this.eventEachPreserves = []
+      this.eventWithPreserveMap.clear()
+      this.eventEachFnMap.clear()
 
-    // 调用 onDestroy 绑定的事件
-    Array.from(this.eventDestroyFnMap.keys()).forEach((key) => {
-      const iFn = this.eventDestroyFnMap.get(key)
-      iFn && iFn()
-    })
-    this.eventDestroyFnMap.clear()
+      // 调用 onDestroy 绑定的事件
+      Array.from(this.eventDestroyFnMap.keys()).forEach((key) => {
+        const iFn = this.eventDestroyFnMap.get(key)
+        iFn && iFn()
+      })
+      this.eventDestroyFnMap.clear()
+    }
   }
 }
 
