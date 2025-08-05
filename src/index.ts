@@ -249,7 +249,8 @@ export class EventSubscribe<
   /** 取消 destroy 订阅 */
   public offDestroy(ctx: string | ((...args: any[]) => void)) {
     if (typeof ctx === 'string') {
-      const iFn = this.eventDestroyFnMap.get(ctx)
+      const key = this.formatEventKey(`__destroy`, ctx)
+      const iFn = this.eventDestroyFnMap.get(key)
       if (iFn) {
         this.eventDestroyFnMap.delete(ctx)
       }
@@ -369,7 +370,8 @@ export class EventSubscribe<
     let rFn: EventCallback | undefined
     if (eventFns?.length) {
       if (typeof ctx === 'string') {
-        rFn = eventKeyMap.get(ctx)
+        const key = this.formatEventKey(`${String(name)}`, ctx)
+        rFn = eventKeyMap.get(key)
       } else {
         rFn = ctx
       }
@@ -466,15 +468,17 @@ export class EventSubscribe<
 
   /** destroy 清空已绑定的事件 */
   destroy() {
-    this.logger('destroy', '', [])
     const prefix = this.autoEventPrefix()
     if (prefix) {
+      this.logger('destroy', prefix, [])
       // 只清除当前prefix 绑定的事件
       const { eventFnMap, eventKeyMap } = this
       const eventNames = Array.from(eventFnMap.keys())
       const eventKeys = Array.from(eventKeyMap.keys()).filter((key) => {
         return key.startsWith(prefix)
       })
+
+      this.logger('destroy', 'eventKeys', eventKeys)
 
       // off 清除逻辑
       eventNames.forEach((name) => {
@@ -494,9 +498,23 @@ export class EventSubscribe<
         })
       })
 
-      // TODO: onEach 事件绑定处理
-      // TODO: onDestroy 事件绑定处理
+      const eventEachKeys = Array.from(this.eventKeyMap.keys()).filter((key) => {
+        return key.startsWith(prefix)
+      })
+      eventEachKeys.forEach((key) => {
+        this.eventKeyMap.delete(key)
+      })
+
+      // 执行并销毁 destroy
+      Array.from(this.eventDestroyFnMap.entries()).forEach(([key, fn]) => {
+        if (key.startsWith(prefix)) {
+          fn()
+        }
+        this.eventDestroyFnMap.delete(key)
+      })
+      // eventEachPreserves, eventWithPreserveMap, eventEachFnMap 继续沿用不需要 destroy
     } else {
+      this.logger('destroy', '', [])
       this.eventResultMap.clear()
       this.eventFnMap.clear()
       this.eventKeyMap.clear()
