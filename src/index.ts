@@ -278,7 +278,6 @@ export class EventSubscribe<
     immediate?: boolean,
     fnKey?: string
   ) {
-    this.logger('on', name, [`immediate: ${immediate}`, `fnKey: ${fnKey}`])
     const { eventFnMap, eventResultMap, eventKeyMap } = this
     const iEvents = eventFnMap.get(name)
     if (!iEvents) {
@@ -296,6 +295,8 @@ export class EventSubscribe<
     // key 关系初始化
     const eventKey = this.formatEventKey(`${String(name)}`, fnKey)
     eventKeyMap.set(eventKey, done)
+
+    this.logger('on', name, [`immediate: ${!!immediate}`, `eventKey: ${eventKey}`])
 
     if (immediate) {
       if (eventResultMap.has(name)) {
@@ -364,7 +365,6 @@ export class EventSubscribe<
    * @param ctx: 订阅时方法 | 订阅标识
    * */
   off<IK extends K, IR extends F[IK]>(name: IK, ctx: EventCallback<IR> | string) {
-    this.logger('off', name, [`ctx: ${ctx}`])
     const { eventFnMap, eventKeyMap } = this
     const eventFns = eventFnMap.get(name)
     let rFn: EventCallback | undefined
@@ -372,8 +372,10 @@ export class EventSubscribe<
       if (typeof ctx === 'string') {
         const key = this.formatEventKey(`${String(name)}`, ctx)
         rFn = eventKeyMap.get(key)
+        this.logger('off', name, [`eventKey: ${key}`, `fn: ${!!rFn}`])
       } else {
         rFn = ctx
+        this.logger('off', name, [`fn:`, !!ctx])
       }
 
       if (rFn) {
@@ -399,20 +401,17 @@ export class EventSubscribe<
     let result: M[K] | R = data
     if (iFilter) {
       result = await iFilter(data)
-      // 避免死循环
-      if (!eventWithPreserve.includes(name)) {
-        this.logger('trigger', `${String(name)}`, [data, '=>', result])
-      }
-    } else {
-      // 避免死循环
-      if (!eventWithPreserve.includes(name)) {
-        this.logger('trigger', `${String(name)}`, [result])
-      }
     }
 
     if (!ignoreUndefined || ![undefined, null].includes(result)) {
       eventResultMap.set(name, result)
       const iFns = eventFnMap.get(name)
+
+      // trigger 日志打印
+      if (!eventWithPreserve.includes(name)) {
+        this.logger('trigger', `${name as string}(${iFns?.length || 0})`, [result])
+      }
+
       if (iFns) {
         // 防止循环过程中 off 导致后续循环不连续
         Array.from(iFns).forEach((fn) => {
