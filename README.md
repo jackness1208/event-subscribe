@@ -213,10 +213,10 @@ export declare class EventSubscribe<
   /** 事件 结果 map */
   private eventResultMap
   /** 事件 filterMap */
-  private eventFilterMap
+  private eventNameToMiddlesMap
   private eventFnMap
   /** 事件 key map */
-  private eventKeyMap
+  private eventKeyToFnsMap
   /** 事件key */
   private eventKeyPadding
   /** 搭配 onWithPreserve 使用，记录列表事件的完整log */
