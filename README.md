@@ -216,7 +216,7 @@ export declare class EventSubscribe<
   private eventNameToMiddlesMap
   private eventFnMap
   /** 事件 key map */
-  private eventKeyToFnsMap
+  private eventKeyToFnMap
   /** 事件key */
   private eventKeyPadding
   /** 搭配 onWithPreserve 使用，记录列表事件的完整log */

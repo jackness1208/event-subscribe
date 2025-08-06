@@ -52,14 +52,14 @@ export class EventSubscribe<
   private logger: EventSubscribeLogger<M> = function () {}
   /** 事件 结果 map */
   private eventResultMap: Map<K, R> = new Map()
-  /** 事件 处理中间函数 name -> fn[] middleMap */
+  /** 事件 处理中间函数 name -> middles */
   private eventNameToMiddlesMap: Map<K, FilterCallback<M[K], R>>
-  /** 事件 map: name -> callback[]p */
+  /** 事件 map: name -> fns */
   private eventNameToFnsMap: Map<K, EventCallback<R>[]>
   /** 事件 map: name -> keys */
   private eventNameToKeysMap: Map<string, string[]>
-  /** 事件 key -> fn[] map */
-  private eventKeyToFnsMap: Map<string, EventCallback<R>>
+  /** 事件 key -> fn map */
+  private eventKeyToFnMap: Map<string, EventCallback<R>>
   /** 事件动态key用变了 */
   private eventKeyPadding: number = 0
   /** 搭配 onWithPreserve 使用，记录列表事件的完整log */
@@ -97,7 +97,7 @@ export class EventSubscribe<
     this.eventEachFnMap = new Map()
     this.eventWithPreserveMap = new Map()
     this.eventWithPreserve = []
-    this.eventKeyToFnsMap = new Map()
+    this.eventKeyToFnMap = new Map()
     this.eventNameToKeysMap = new Map()
     this.eventNameToFnsMap = new Map()
     this.eventNameToMiddlesMap = new Map()
@@ -291,7 +291,7 @@ export class EventSubscribe<
     immediate?: boolean,
     fnKey?: string
   ) {
-    const { eventNameToFnsMap, eventResultMap, eventKeyToFnsMap } = this
+    const { eventNameToFnsMap, eventResultMap, eventKeyToFnMap } = this
     const iEvents = eventNameToFnsMap.get(name)
     if (!iEvents) {
       eventNameToFnsMap.set(name, [done])
@@ -307,7 +307,7 @@ export class EventSubscribe<
 
     // key 关系初始化
     const eventKey = this.formatEventKey(`${String(name)}`, fnKey)
-    eventKeyToFnsMap.set(eventKey, done)
+    eventKeyToFnMap.set(eventKey, done)
 
     this.logger('on', name, [`immediate: ${!!immediate}`, `eventKey: ${eventKey}`])
 
@@ -378,13 +378,13 @@ export class EventSubscribe<
    * @param ctx: 订阅时方法 | 订阅标识
    * */
   off<IK extends K, IR extends F[IK]>(name: IK, ctx: EventCallback<IR> | string) {
-    const { eventNameToFnsMap, eventKeyToFnsMap } = this
+    const { eventNameToFnsMap, eventKeyToFnMap } = this
     const eventFns = eventNameToFnsMap.get(name)
     let rFn: EventCallback | undefined
     if (eventFns?.length) {
       if (typeof ctx === 'string') {
         const key = this.formatEventKey(`${String(name)}`, ctx)
-        rFn = eventKeyToFnsMap.get(key)
+        rFn = eventKeyToFnMap.get(key)
         this.logger('off', name, [`eventKey: ${key}`, `fn: ${!!rFn}`])
       } else {
         rFn = ctx
@@ -484,9 +484,9 @@ export class EventSubscribe<
     if (prefix) {
       this.logger('destroy', prefix, [])
       // 只清除当前prefix 绑定的事件
-      const { eventNameToFnsMap, eventKeyToFnsMap } = this
+      const { eventNameToFnsMap, eventKeyToFnMap } = this
       const eventNames = Array.from(eventNameToFnsMap.keys())
-      const eventKeys = Array.from(eventKeyToFnsMap.keys()).filter((key) => {
+      const eventKeys = Array.from(eventKeyToFnMap.keys()).filter((key) => {
         return key.startsWith(prefix)
       })
 
@@ -499,7 +499,7 @@ export class EventSubscribe<
           return
         }
         eventKeys.forEach((fnKey) => {
-          const rFn = eventKeyToFnsMap.get(fnKey)
+          const rFn = eventKeyToFnMap.get(fnKey)
           if (rFn) {
             const rFnIndex = eventFns.indexOf(rFn)
 
@@ -510,11 +510,11 @@ export class EventSubscribe<
         })
       })
 
-      const eventEachKeys = Array.from(this.eventKeyToFnsMap.keys()).filter((key) => {
+      const eventEachKeys = Array.from(this.eventKeyToFnMap.keys()).filter((key) => {
         return key.startsWith(prefix)
       })
       eventEachKeys.forEach((key) => {
-        this.eventKeyToFnsMap.delete(key)
+        this.eventKeyToFnMap.delete(key)
       })
 
       // 执行并销毁 destroy
@@ -529,7 +529,7 @@ export class EventSubscribe<
       this.logger('destroy', '', [])
       this.eventResultMap.clear()
       this.eventNameToFnsMap.clear()
-      this.eventKeyToFnsMap.clear()
+      this.eventKeyToFnMap.clear()
       this.eventEachPreserves = []
       this.eventWithPreserveMap.clear()
       this.eventEachFnMap.clear()
