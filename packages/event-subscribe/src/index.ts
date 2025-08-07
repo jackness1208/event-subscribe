@@ -1,5 +1,5 @@
 /** 事件 hooks */
-export interface EventNameToResultMap {
+export type EventNameToResultMap = {
   [eventName: string]: any
 }
 
@@ -35,9 +35,9 @@ export type EventSubscribeLoggerType =
   | 'init'
 
 /** logger 格式 */
-export type EventSubscribeLogger<M extends EventNameToResultMap> = (
+export type EventSubscribeLogger<EventMap extends EventNameToResultMap> = (
   type: EventSubscribeLoggerType,
-  eventName: keyof M,
+  eventName: keyof EventMap,
   args: any[]
 ) => void
 
@@ -47,35 +47,40 @@ interface EventNameToKeysInfo {
   fn: EventCallback | undefined
 }
 
-export interface EventSubscribeOption<M extends EventNameToResultMap> {
+export interface EventSubscribeOption<EventMap extends EventNameToResultMap> {
   /** 需要搭配 onWithPreserve 使用，记录列表事件的完整log */
-  __eventWithPreserve?: (keyof M)[]
+  eventWithPreserve?: (keyof EventMap)[]
   /** log 存储上限 */
-  __eventWithPreserveLimit?: number
+  eventWithPreserveLimit?: number
   /** 自动事件绑定前缀 */
   autoEventPrefix?: () => string
-  logger?: EventSubscribeLogger<M>
+  logger?: EventSubscribeLogger<EventMap>
 }
 export class EventSubscribe<
-  M extends EventNameToResultMap,
-  F extends Record<keyof M, any> = M,
-  K extends keyof M = keyof M,
-  R extends F[K] = F[K]
+  EventMap extends EventNameToResultMap = EventNameToResultMap,
+  EventMiddle extends Record<keyof EventMap, any> = EventMap,
+  EventName extends keyof EventMap = keyof EventMap,
+  EventResult extends EventMap[EventName] = EventMap[EventName]
 > {
-  private __logger: EventSubscribeLogger<M> = function () {}
+  private __logger: EventSubscribeLogger<EventMap> = function (
+    type: EventSubscribeLoggerType,
+    eventName: keyof EventMap,
+    args: any[]
+  ) {}
+
   /** 事件 结果 name -> data map */
-  private __eventNameToResultMap: Map<K, R> = new Map()
+  private __eventNameToResultMap: Map<EventName, EventResult> = new Map()
   /** 事件 处理中间函数 name -> middles */
-  private __eventNameToMiddlesMap: Map<K, FilterCallback<M[K], R>>
+  private __eventNameToMiddlesMap: Map<EventName, FilterCallback<EventMap[EventName], EventResult>>
   /** 事件 map: name -> keys */
   private __eventNameToKeysMap: Map<string, string[]>
   /** 事件 key -> fn map */
-  private __eventKeyToFnMap: Map<string, EventCallback<R>>
+  private __eventKeyToFnMap: Map<string, EventCallback<EventResult>>
   /** 事件动态key用变了 */
   private __eventKeyPadding: number = 0
   /** 搭配 onWithPreserve 使用，记录列表事件的完整log */
-  private __eventWithPreserve: (keyof M)[]
-  private __eventWithPreserveNameToDatasMap: Map<K, F[K][]>
+  private __eventWithPreserve: (keyof EventMap)[]
+  private __eventWithPreserveNameToDatasMap: Map<EventName, EventResult[]>
   /** 完整log 的上限 */
   private __eventWithPreserveLimit: number = 500
 
@@ -85,11 +90,11 @@ export class EventSubscribe<
   /** destroy 时回调Fns */
   private __eventDestroyKeyToFnMap: Map<string, () => void>
   /** 订阅全部事件的 fns */
-  private __eventEachKeyToFnMap: Map<string, (type: K, data: R) => void>
+  private __eventEachKeyToFnMap: Map<string, (type: EventName, data: EventResult) => void>
   /** 订阅全部事件的 历史记录列表 (用于 onEach()) */
-  private __eventEachPreserves: { name: K; data: R }[] = []
+  private __eventEachPreserves: { name: EventName; data: EventResult }[] = []
   /** 初始化 */
-  constructor(op?: EventSubscribeOption<M>) {
+  constructor(op?: EventSubscribeOption<EventMap>) {
     // 数据初始化
     this.__eventDestroyKeyToFnMap = new Map()
     this.__eventEachKeyToFnMap = new Map()
@@ -102,12 +107,12 @@ export class EventSubscribe<
     if (op?.logger) {
       this.__logger = op.logger
     }
-    if (op?.__eventWithPreserve) {
-      this.__eventWithPreserve = op.__eventWithPreserve
+    if (op?.eventWithPreserve) {
+      this.__eventWithPreserve = op.eventWithPreserve
       this.__logger('init', 'constructor', ['__eventWithPreserve:', this.__eventWithPreserve])
     }
-    if (op?.__eventWithPreserveLimit !== undefined) {
-      this.__eventWithPreserveLimit = op.__eventWithPreserveLimit
+    if (op?.eventWithPreserveLimit !== undefined) {
+      this.__eventWithPreserveLimit = op.eventWithPreserveLimit
     }
     if (op?.autoEventPrefix) {
       this.__autoEventPrefix = op.autoEventPrefix
@@ -115,7 +120,7 @@ export class EventSubscribe<
   }
 
   /** 根据 name 获取对应的回调函数列表 */
-  private __getFnsFromName(name: K): EventNameToKeysInfo[] {
+  private __getFnsFromName(name: EventName): EventNameToKeysInfo[] {
     const keys = this.__eventNameToKeysMap.get(`${name as string}`)
     if (!keys) {
       return []
@@ -155,12 +160,12 @@ export class EventSubscribe<
   }
 
   /** 添加历史记录 */
-  private __markPreserve(name: K, data: R) {
+  private __markPreserve(name: EventName, data: EventResult) {
     const needMark = this.__eventWithPreserve.includes(name)
     if (!needMark) {
       return
     }
-    const datas: R[] = this.__eventWithPreserveNameToDatasMap.get(name) || []
+    const datas: EventResult[] = this.__eventWithPreserveNameToDatasMap.get(name) || []
 
     // 当超过上限时，移除最旧的数据
     if (datas.length + 1 > this.__eventWithPreserveLimit) {
@@ -168,7 +173,12 @@ export class EventSubscribe<
     }
     datas.push(data)
 
-    this.__logger('__markPreserve', name, ['history total:', datas.length, 'data:', data])
+    this.__logger('__markPreserve', name as keyof EventMap, [
+      'history total:',
+      datas.length,
+      'data:',
+      data
+    ])
     this.__eventWithPreserveNameToDatasMap.set(name, datas)
   }
 
@@ -180,7 +190,11 @@ export class EventSubscribe<
    * @param fnKey: 用于去掉订阅时标识
    * @returns eventKey 订阅标识, 用于 off
    */
-  onWithPreserve<IK extends K, IR = F[IK]>(name: IK, done: EventCallback<IR>, fnKey?: string) {
+  onWithPreserve<EN extends EventName, ER = EventMap[EN]>(
+    name: EN,
+    done: EventCallback<ER>,
+    fnKey?: string
+  ) {
     this.__logger('onWithPreserve', name, [`fnKey: ${fnKey}`])
     const preserveLogs = this.__eventWithPreserveNameToDatasMap.get(name)
     if (preserveLogs?.length) {
@@ -197,8 +211,8 @@ export class EventSubscribe<
    * @param name: 事件名称
    * @returns 事件返回 arr
    */
-  getPreserve<IK extends K, IR = F[IK]>(name: IK): IR[] {
-    const r = this.__eventWithPreserveNameToDatasMap.get(name) || []
+  getPreserve<EN extends EventName, ER = EventMap[EN]>(name: EN): ER[] {
+    const r: ER[] = this.__eventWithPreserveNameToDatasMap.get(name) || []
     this.__logger('getPreserve', name, ['r:', r])
     return r
   }
@@ -208,8 +222,8 @@ export class EventSubscribe<
    * @param fn: 回调方法
    * @returns eventKey 订阅标识, 用于 offEach
    * */
-  onEach<IK extends K, IR = F[IK]>(
-    fn: (type: IK, data: IR) => void,
+  onEach<EN extends EventName, ER = EventMap[EN]>(
+    fn: (type: EN, data: ER) => void,
     immediate?: boolean,
     fnKey?: string
   ) {
@@ -229,7 +243,7 @@ export class EventSubscribe<
     // 把历史记录上的都触发一次
     if (immediate) {
       this.__eventEachPreserves.forEach(({ name, data }) => {
-        fn(name as IK, data)
+        fn(name as EN, data)
       })
     }
     return eventKey
@@ -267,7 +281,7 @@ export class EventSubscribe<
    * @param name: 事件名称
    * @param data: 入参数据
    * */
-  private triggerEach<IK extends K, IR extends M[IK]>(name: K, data: IR) {
+  private triggerEach<EN extends EventName, ER extends EventMap[EN]>(name: EventName, data: ER) {
     // 把已经订阅 onEach 的都触发一次
     const keys = Array.from(this.__eventEachKeyToFnMap.keys())
     if (keys.length) {
@@ -347,9 +361,9 @@ export class EventSubscribe<
    * @param fnKey: 用于去掉订阅时标识
    * @returns eventKey 订阅标识, 用于 off
    * */
-  onGlobal<IK extends K, IR = F[IK]>(
-    name: IK,
-    done: EventCallback<IR>,
+  onGlobal<EN extends EventName, ER = EventMap[EN]>(
+    name: EN,
+    done: EventCallback<ER>,
     immediate?: boolean,
     fnKey?: string
   ) {
@@ -370,9 +384,9 @@ export class EventSubscribe<
    * @param fnKey: 用于去掉订阅时标识
    * @returns eventKey 订阅标识, 用于 off
    * */
-  on<IK extends K, IR = F[IK]>(
-    name: IK,
-    done: EventCallback<IR>,
+  on<EN extends EventName, ER = EventMap[EN]>(
+    name: EN,
+    done: EventCallback<ER>,
     immediate?: boolean,
     fnKey?: string
   ) {
@@ -392,9 +406,9 @@ export class EventSubscribe<
    * @param fnKey: 用于去掉订阅时标识
    * @returns eventKey 订阅标识, 用于 off
    * */
-  __on<IK extends K, IR = F[IK]>(op: {
-    name: IK
-    done: EventCallback<IR>
+  __on<EN extends EventName, ER = EventMap[EN]>(op: {
+    name: EN
+    done: EventCallback<ER>
     immediate?: boolean
     fnKey?: string
     ignorePrefix?: boolean
@@ -421,7 +435,7 @@ export class EventSubscribe<
     }
 
     if (immediate && __eventNameToResultMap.has(name)) {
-      const data = __eventNameToResultMap.get(name) as IR
+      const data = __eventNameToResultMap.get(name) as ER
       this.__logger('on', name, [
         `on(${String(
           name
@@ -446,9 +460,9 @@ export class EventSubscribe<
    * @param immediate: 立刻执行
    * @returns eventKey 订阅标识, 用于 off
    * */
-  onceUntil<IK extends K, IR extends F[IK]>(
-    name: IK,
-    callback: EventOnceUntilCallback<IR>,
+  onceUntil<EN extends EventName, ER extends EventMap[EN]>(
+    name: EN,
+    callback: EventOnceUntilCallback<ER>,
     immediate?: boolean
   ) {
     this.__logger('onceUntil', name, [`immediate: ${immediate}`])
@@ -473,7 +487,11 @@ export class EventSubscribe<
    * @param callback: 回调方法
    * @returns eventKey 订阅标识, 用于 off
    * */
-  once<IK extends K, IR extends F[IK]>(name: IK, done: EventCallback<IR>, immediate?: boolean) {
+  once<EN extends EventName, ER extends EventMap[EN]>(
+    name: EN,
+    done: EventCallback<ER>,
+    immediate?: boolean
+  ) {
     this.__logger('once', name, [`immediate: ${immediate}`])
     const { __eventNameToResultMap } = this
     const iResult = __eventNameToResultMap.get(name)
@@ -497,7 +515,7 @@ export class EventSubscribe<
    * @param name: 事件名称
    * @param ctx: 订阅时方法 | 订阅标识
    * */
-  off<IK extends K, IR extends F[IK]>(name: IK, ctx: EventCallback<IR> | string) {
+  off<EN extends EventName, ER extends EventMap[EN]>(name: EN, ctx: EventCallback<ER> | string) {
     const { __eventNameToKeysMap, __eventKeyToFnMap } = this
     const eventName = String(name)
     const fnInfos = this.__getFnsFromName(name)
@@ -540,11 +558,15 @@ export class EventSubscribe<
    * @param data: 入参数据
    * @param ignoreUndefined: 避免返回 undefined
    * */
-  async trigger<IK extends K, IR extends M[IK]>(name: IK, data: IR, ignoreUndefined?: boolean) {
+  async trigger<EN extends EventName, ER extends EventMap[EN]>(
+    name: EN,
+    data: ER,
+    ignoreUndefined?: boolean
+  ) {
     const { __eventNameToResultMap, __eventNameToMiddlesMap, __eventWithPreserve } = this
 
     const middleHandle = __eventNameToMiddlesMap.get(name)
-    let result: M[K] | R = data
+    let result: EventMap[EventName] | EventResult = data
     if (middleHandle) {
       result = await middleHandle(data)
     }
@@ -580,14 +602,14 @@ export class EventSubscribe<
    * 事件回放
    * @param name: 事件名称
    * */
-  replay<IK extends K>(name: IK) {
+  replay<EN extends EventName>(name: EN) {
     this.__logger('replay', name, [])
     const { __eventNameToResultMap, __eventNameToMiddlesMap } = this
     const fnInfos = this.__getFnsFromName(name)
     if (fnInfos && __eventNameToResultMap.has(name)) {
       const lastResult = __eventNameToResultMap.get(name)
       fnInfos.forEach((info) => {
-        info.fn && info.fn(lastResult as R)
+        info.fn && info.fn(lastResult as EventResult)
       })
     }
   }
@@ -597,9 +619,9 @@ export class EventSubscribe<
    * @param name 事件 名称
    * @param done 过滤方法
    */
-  async addFilter<IK extends K, IM extends M[IK], IR extends R>(
-    name: IK,
-    done: FilterCallback<IM, IR>
+  async addFilter<EN extends EventName, EM extends EventMap[EN], ER extends EventMiddle[EN]>(
+    name: EN,
+    done: FilterCallback<EM, ER>
   ) {
     this.__logger('addFilter', name, [])
     const { __eventNameToMiddlesMap } = this
@@ -607,8 +629,8 @@ export class EventSubscribe<
   }
 
   /** 获取事件 cache */
-  getCache<IK extends K, IM extends M[IK]>(key: IK) {
-    return this.__eventNameToResultMap.get(key) as IM | undefined
+  getCache<EN extends EventName, EM extends EventMap[EN]>(key: EN) {
+    return this.__eventNameToResultMap.get(key) as EventMap[EventName] | undefined
   }
 
   /** 同 destroy */
