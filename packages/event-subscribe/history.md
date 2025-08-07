@@ -1,5 +1,9 @@
 # 版本变更
 
+## 2.0.0 (2025-08-07)
+
+- feat: 新增 `autoEventPrefix` 参数，用于设置为自动添加前缀, 适用与跨页面 eventBridge 共用场景
+
 ## 1.8.4 (2025-05-16)
 
 - feat: 新增 `onWithPreserveLimit` 参数，用于设置保存历史消息的最大条数
