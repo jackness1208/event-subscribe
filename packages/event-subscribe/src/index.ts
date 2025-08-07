@@ -361,7 +361,7 @@ export class EventSubscribe<
    * @param fnKey: 用于去掉订阅时标识
    * @returns eventKey 订阅标识, 用于 off
    * */
-  onGlobal<EN extends EventName, ER = EventMap[EN]>(
+  onGlobal<EN extends EventName, ER = EventMiddle[EN]>(
     name: EN,
     done: EventCallback<ER>,
     immediate?: boolean,
@@ -384,7 +384,7 @@ export class EventSubscribe<
    * @param fnKey: 用于去掉订阅时标识
    * @returns eventKey 订阅标识, 用于 off
    * */
-  on<EN extends EventName, ER = EventMap[EN]>(
+  on<EN extends EventName, ER = EventMiddle[EN]>(
     name: EN,
     done: EventCallback<ER>,
     immediate?: boolean,
@@ -406,7 +406,7 @@ export class EventSubscribe<
    * @param fnKey: 用于去掉订阅时标识
    * @returns eventKey 订阅标识, 用于 off
    * */
-  __on<EN extends EventName, ER = EventMap[EN]>(op: {
+  __on<EN extends EventName, ER = EventMiddle[EN]>(op: {
     name: EN
     done: EventCallback<ER>
     immediate?: boolean
@@ -487,7 +487,7 @@ export class EventSubscribe<
    * @param callback: 回调方法
    * @returns eventKey 订阅标识, 用于 off
    * */
-  once<EN extends EventName, ER extends EventMap[EN]>(
+  once<EN extends EventName, ER extends EventMiddle[EN]>(
     name: EN,
     done: EventCallback<ER>,
     immediate?: boolean
@@ -515,7 +515,7 @@ export class EventSubscribe<
    * @param name: 事件名称
    * @param ctx: 订阅时方法 | 订阅标识
    * */
-  off<EN extends EventName, ER extends EventMap[EN]>(name: EN, ctx: EventCallback<ER> | string) {
+  off<EN extends EventName, ER extends EventMiddle[EN]>(name: EN, ctx: EventCallback<ER> | string) {
     const { __eventNameToKeysMap, __eventKeyToFnMap } = this
     const eventName = String(name)
     const fnInfos = this.__getFnsFromName(name)
@@ -629,8 +629,8 @@ export class EventSubscribe<
   }
 
   /** 获取事件 cache */
-  getCache<EN extends EventName, EM extends EventMap[EN]>(key: EN) {
-    return this.__eventNameToResultMap.get(key) as EventMap[EventName] | undefined
+  getCache<EN extends EventName, EM extends EventMiddle[EN]>(key: EN) {
+    return this.__eventNameToResultMap.get(key) as EM | undefined
   }
 
   /** 同 destroy */

@@ -19,7 +19,7 @@ test('eventSubscribe types & addFilter test', async () => {
   })
 
   es.addFilter('two', async (rs) => {
-    return +rs + 1
+    return Number(rs + 1)
   })
 
   es.addFilter('three', async (rs) => {
