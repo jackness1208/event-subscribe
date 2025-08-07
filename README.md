@@ -168,7 +168,7 @@ iBridge.destroy()
 
 ```typescript
 /** 事件 hooks */
-export interface EventResultMap {
+export interface eventNameToResultMap {
   [eventName: string]: any
 }
 /** 事件回调 */
@@ -193,25 +193,25 @@ export declare type EventSubscribeLoggerType =
   | 'onWithPreserve'
   | 'getPreserve'
 /** logger 格式 */
-export declare type EventSubscribeLogger<M extends EventResultMap> = (
+export declare type EventSubscribeLogger<M extends eventNameToResultMap> = (
   type: EventSubscribeLoggerType,
   eventName: keyof M,
   args: any[]
 ) => void
-export interface EventSubscribeOption<M extends EventResultMap> {
+export interface EventSubscribeOption<M extends eventNameToResultMap> {
   /** 搭配 onWithPreserve 使用，记录列表事件的完整log */
   eventWithPreserve?: (keyof M)[]
   logger?: EventSubscribeLogger<M>
 }
 export declare class EventSubscribe<
-  M extends EventResultMap,
+  M extends eventNameToResultMap,
   F extends Record<keyof M, any> = M,
   K extends keyof M = keyof M,
   R extends F[K] = F[K]
 > {
   private logger
   /** 事件 结果 map */
-  private eventResultMap
+  private eventNameToResultMap
   /** 事件 filterMap */
   private eventNameToMiddlesMap
   private eventFnMap
@@ -356,8 +356,8 @@ export declare class EventSubscribe<
   destroy(): void
 }
 export declare const eventSubscribe: EventSubscribe<
-  EventResultMap,
-  EventResultMap,
+  eventNameToResultMap,
+  eventNameToResultMap,
   string | number,
   any
 >

@@ -1,5 +1,5 @@
 /** 事件 hooks */
-export interface EventResultMap {
+export interface eventNameToResultMap {
   [eventName: string]: any
 }
 
@@ -26,9 +26,14 @@ export type EventSubscribeLoggerType =
   | 'onceUntil'
   | 'onWithPreserve'
   | 'getPreserve'
+  | 'onEach'
+  | 'offEach'
+  | 'triggerEach'
+  | 'onDestroy'
+  | 'offDestroy'
 
 /** logger 格式 */
-export type EventSubscribeLogger<M extends EventResultMap> = (
+export type EventSubscribeLogger<M extends eventNameToResultMap> = (
   type: EventSubscribeLoggerType,
   eventName: keyof M,
   args: any[]
@@ -40,7 +45,7 @@ interface EventNameToKeysInfo {
   fn: EventCallback | undefined
 }
 
-export interface EventSubscribeOption<M extends EventResultMap> {
+export interface EventSubscribeOption<M extends eventNameToResultMap> {
   /** 需要搭配 onWithPreserve 使用，记录列表事件的完整log */
   eventWithPreserve?: (keyof M)[]
   /** log 存储上限 */
@@ -50,14 +55,14 @@ export interface EventSubscribeOption<M extends EventResultMap> {
   logger?: EventSubscribeLogger<M>
 }
 export class EventSubscribe<
-  M extends EventResultMap,
+  M extends eventNameToResultMap,
   F extends Record<keyof M, any> = M,
   K extends keyof M = keyof M,
   R extends F[K] = F[K]
 > {
   private logger: EventSubscribeLogger<M> = function () {}
-  /** 事件 结果 map */
-  private eventResultMap: Map<K, R> = new Map()
+  /** 事件 结果 name -> data map */
+  private eventNameToResultMap: Map<K, R> = new Map()
   /** 事件 处理中间函数 name -> middles */
   private eventNameToMiddlesMap: Map<K, FilterCallback<M[K], R>>
   /** 事件 map: name -> keys */
@@ -208,6 +213,7 @@ export class EventSubscribe<
     // key 关系初始化
     const eventKey = this.formatEventKey(`__each`, fnKey)
     this.eventEachKeyToFnMap.set(eventKey, fn as () => void)
+    this.logger('onEach', 'bind', [eventKey])
 
     // 把历史记录上的都触发一次
     if (immediate) {
@@ -229,12 +235,14 @@ export class EventSubscribe<
       const iFn = this.eventEachKeyToFnMap.get(eventKey)
       if (iFn) {
         this.eventEachKeyToFnMap.delete(eventKey)
+        this.logger('offEach', 'eventKey', [eventKey])
       }
     } else {
       Array.from(this.eventEachKeyToFnMap.keys()).forEach((key) => {
         const iFn = this.eventEachKeyToFnMap.get(key)
         if (iFn && iFn === ctx) {
           this.eventEachKeyToFnMap.delete(key)
+          this.logger('offEach', 'eventKey', [key])
         }
       })
     }
@@ -247,7 +255,17 @@ export class EventSubscribe<
    * */
   private triggerEach<IK extends K, IR extends M[IK]>(name: K, data: IR) {
     // 把已经订阅 onEach 的都触发一次
-    Array.from(this.eventEachKeyToFnMap.keys()).forEach((key) => {
+    const keys = Array.from(this.eventEachKeyToFnMap.keys())
+    if (keys.length) {
+      this.logger('triggerEach', '事件触发', [
+        'data:',
+        data,
+        `eventKeys[${keys.length}]`,
+        keys.join(', ')
+      ])
+    }
+
+    keys.forEach((key) => {
       const iFn = this.eventEachKeyToFnMap.get(key)
       if (iFn) {
         iFn(name, data)
@@ -277,6 +295,7 @@ export class EventSubscribe<
     // key 关系初始化
     const eventKey = this.formatEventKey(`__destroy`, fnKey)
     this.eventDestroyKeyToFnMap.set(eventKey, fn)
+    this.logger('onDestroy', 'bind', [eventKey])
     return eventKey
   }
 
@@ -287,12 +306,14 @@ export class EventSubscribe<
       const iFn = this.eventDestroyKeyToFnMap.get(key)
       if (iFn) {
         this.eventDestroyKeyToFnMap.delete(ctx)
+        this.logger('offDestroy', '解除绑定', [key])
       }
     } else {
       Array.from(this.eventDestroyKeyToFnMap.keys()).forEach((key) => {
         const iFn = this.eventDestroyKeyToFnMap.get(key)
         if (iFn && iFn === ctx) {
           this.eventDestroyKeyToFnMap.delete(key)
+          this.logger('offDestroy', '解除绑定', [key])
         }
       })
     }
@@ -312,7 +333,7 @@ export class EventSubscribe<
     immediate?: boolean,
     fnKey?: string
   ) {
-    const { eventResultMap, eventKeyToFnMap, eventNameToKeysMap } = this
+    const { eventNameToResultMap, eventKeyToFnMap, eventNameToKeysMap } = this
     if (fnKey) {
       // 查看是否之前已经有绑定, 有则先去掉
       this.off(name, fnKey)
@@ -328,12 +349,19 @@ export class EventSubscribe<
       eventNameToKeysMap.set(evetName, keys)
     }
 
-    this.logger('on', name, [`immediate: ${!!immediate}`, `eventKey: ${eventKey}`])
-
-    if (immediate) {
-      if (eventResultMap.has(name)) {
-        done(eventResultMap.get(name) as IR)
-      }
+    if (immediate && eventNameToResultMap.has(name)) {
+      const data = eventNameToResultMap.get(name) as IR
+      this.logger('on', name, [
+        `on(${String(
+          name
+        )}, fn, immediate: ${!!immediate}, eventKey: ${eventKey}), 立马触发一次, data:`,
+        data
+      ])
+      done(data)
+    } else {
+      this.logger('on', name, [
+        `on(${String(name)}, fn, immediate: ${!!immediate}, eventKey: ${eventKey})`
+      ])
     }
     return eventKey
   }
@@ -374,8 +402,8 @@ export class EventSubscribe<
    * */
   once<IK extends K, IR extends F[IK]>(name: IK, done: EventCallback<IR>, immediate?: boolean) {
     this.logger('once', name, [`immediate: ${immediate}`])
-    const { eventResultMap } = this
-    const iResult = eventResultMap.get(name)
+    const { eventNameToResultMap } = this
+    const iResult = eventNameToResultMap.get(name)
     if (immediate && iResult) {
       done(iResult)
     } else {
@@ -437,27 +465,26 @@ export class EventSubscribe<
    * @param ignoreUndefined: 避免返回 undefined
    * */
   async trigger<IK extends K, IR extends M[IK]>(name: IK, data: IR, ignoreUndefined?: boolean) {
-    const { eventResultMap, eventNameToMiddlesMap, eventWithPreserve } = this
+    const { eventNameToResultMap, eventNameToMiddlesMap, eventWithPreserve } = this
 
-    const iFilter = eventNameToMiddlesMap.get(name)
+    const middleHandle = eventNameToMiddlesMap.get(name)
     let result: M[K] | R = data
-    if (iFilter) {
-      result = await iFilter(data)
+    if (middleHandle) {
+      result = await middleHandle(data)
     }
 
     if (!ignoreUndefined || ![undefined, null].includes(result)) {
-      eventResultMap.set(name, result)
+      eventNameToResultMap.set(name, result)
       const fnInfos = this.getFnsFromName(name)
 
       // trigger 日志打印
       if (!eventWithPreserve.includes(name)) {
-        this.logger(
-          'trigger',
-          `${name as string}(${fnInfos?.length || 0} - ${fnInfos
-            .map((info) => info.key)
-            .join(',')})`,
-          [result]
-        )
+        this.logger('trigger', name, [
+          'data:',
+          result,
+          `event total: ${fnInfos.length}`,
+          `[${fnInfos.map((info) => info.key).join(',')}]`
+        ])
       }
 
       if (fnInfos) {
@@ -479,10 +506,10 @@ export class EventSubscribe<
    * */
   replay<IK extends K>(name: IK) {
     this.logger('replay', name, [])
-    const { eventResultMap, eventNameToMiddlesMap } = this
+    const { eventNameToResultMap, eventNameToMiddlesMap } = this
     const fnInfos = this.getFnsFromName(name)
-    if (fnInfos && eventResultMap.has(name)) {
-      const lastResult = eventResultMap.get(name)
+    if (fnInfos && eventNameToResultMap.has(name)) {
+      const lastResult = eventNameToResultMap.get(name)
       fnInfos.forEach((info) => {
         info.fn && info.fn(lastResult as R)
       })
@@ -505,7 +532,7 @@ export class EventSubscribe<
 
   /** 获取事件 cache */
   getCache<IK extends K, IM extends M[IK]>(key: IK) {
-    return this.eventResultMap.get(key) as IM | undefined
+    return this.eventNameToResultMap.get(key) as IM | undefined
   }
 
   /** 同 destroy */
@@ -572,7 +599,7 @@ export class EventSubscribe<
       // eventEachPreserves, eventWithPreserveNameToDatasMap 继续沿用不需要 destroy
     } else {
       this.logger('destroy', '', [])
-      this.eventResultMap.clear()
+      this.eventNameToResultMap.clear()
       this.eventNameToKeysMap.clear()
       this.eventKeyToFnMap.clear()
       this.eventEachPreserves = []

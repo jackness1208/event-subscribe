@@ -1,10 +1,10 @@
 import { EventSubscribe } from '../src/index'
 test('eventSubscribe.offDestroy(key) test', () => {
-  interface EventResultMap {
+  interface eventNameToResultMap {
     hello: number
     world: string
   }
-  const eventSubscribe = new EventSubscribe<EventResultMap>()
+  const eventSubscribe = new EventSubscribe<eventNameToResultMap>()
   const result: string[] = []
   const dKey = eventSubscribe.onDestroy(() => {
     result.push('destroy')
@@ -15,11 +15,11 @@ test('eventSubscribe.offDestroy(key) test', () => {
 })
 
 test('eventSubscribe.offDestroy(fn) test', () => {
-  interface EventResultMap {
+  interface eventNameToResultMap {
     hello: number
     world: string
   }
-  const eventSubscribe = new EventSubscribe<EventResultMap>()
+  const eventSubscribe = new EventSubscribe<eventNameToResultMap>()
   const result: string[] = []
   const dFn = () => {
     result.push('destory')
