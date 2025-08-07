@@ -118,7 +118,7 @@ eventSubscribe.off('hello', eventKey)
 ```typescript
 import { EventSubscribe } from 'event-subscribe'
 const iBridge = new EventSubscribe({
-  eventWithPreserve: ['log']
+  __eventWithPreserve: ['log']
 })
 
 iBridge.trigger('log', 'hello 01')
@@ -168,7 +168,7 @@ iBridge.destroy()
 
 ```typescript
 /** 事件 hooks */
-export interface eventNameToResultMap {
+export interface __eventNameToResultMap {
   [eventName: string]: any
 }
 /** 事件回调 */
@@ -193,50 +193,50 @@ export declare type EventSubscribeLoggerType =
   | 'onWithPreserve'
   | 'getPreserve'
 /** logger 格式 */
-export declare type EventSubscribeLogger<M extends eventNameToResultMap> = (
+export declare type EventSubscribeLogger<M extends __eventNameToResultMap> = (
   type: EventSubscribeLoggerType,
   eventName: keyof M,
   args: any[]
 ) => void
-export interface EventSubscribeOption<M extends eventNameToResultMap> {
+export interface EventSubscribeOption<M extends __eventNameToResultMap> {
   /** 搭配 onWithPreserve 使用，记录列表事件的完整log */
-  eventWithPreserve?: (keyof M)[]
+  __eventWithPreserve?: (keyof M)[]
   logger?: EventSubscribeLogger<M>
 }
 export declare class EventSubscribe<
-  M extends eventNameToResultMap,
+  M extends __eventNameToResultMap,
   F extends Record<keyof M, any> = M,
   K extends keyof M = keyof M,
   R extends F[K] = F[K]
 > {
   private logger
   /** 事件 结果 map */
-  private eventNameToResultMap
+  private __eventNameToResultMap
   /** 事件 filterMap */
-  private eventNameToMiddlesMap
+  private __eventNameToMiddlesMap
   private eventFnMap
   /** 事件 key map */
-  private eventKeyToFnMap
+  private __eventKeyToFnMap
   /** 事件key */
-  private eventKeyPadding
+  private __eventKeyPadding
   /** 搭配 onWithPreserve 使用，记录列表事件的完整log */
-  private eventWithPreserve
-  private eventWithPreserveNameToDatasMap
+  private __eventWithPreserve
+  private __eventWithPreserveNameToDatasMap
   /** destroy 时回调Fns */
-  private eventDestroyKeyToFnMap
+  private __eventDestroyKeyToFnMap
   /** 订阅全部事件的 fns */
-  private eventEachKeyToFnMap
+  private __eventEachKeyToFnMap
   /** 订阅全部事件的 历史记录列表 (用于 onEach()) */
-  private eventEachPreserves
+  private __eventEachPreserves
   /** 初始化 */
   constructor(op?: EventSubscribeOption<M>)
   /** 格式化 事件key */
-  private formatEventKey
+  private __formatEventKey
   /** 添加历史记录 */
-  private markPreserve
+  private __markPreserve
   /**
    * 事件订阅（包含订阅前已触发的日志）
-   * 需搭配 op.eventWithPreserve 使用
+   * 需搭配 op.__eventWithPreserve 使用
    * @param name: 事件名称
    * @param done: 回调方法
    * @param fnKey: 用于去掉订阅时标识
@@ -249,7 +249,7 @@ export declare class EventSubscribe<
   ): string
   /**
    * 获取历史记录
-   * 需搭配 op.eventWithPreserve 使用
+   * 需搭配 op.__eventWithPreserve 使用
    * @param name: 事件名称
    * @returns 事件返回 arr
    */
@@ -356,8 +356,8 @@ export declare class EventSubscribe<
   destroy(): void
 }
 export declare const eventSubscribe: EventSubscribe<
-  eventNameToResultMap,
-  eventNameToResultMap,
+  __eventNameToResultMap,
+  __eventNameToResultMap,
   string | number,
   any
 >

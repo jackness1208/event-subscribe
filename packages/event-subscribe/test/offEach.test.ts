@@ -1,10 +1,10 @@
 import { EventSubscribe } from '../src/index'
 test('eventSubscribe.offEach(key) test', () => {
-  interface eventNameToResultMap {
+  interface __eventNameToResultMap {
     hello: number
     world: string
   }
-  const eventSubscribe = new EventSubscribe<eventNameToResultMap>()
+  const eventSubscribe = new EventSubscribe<__eventNameToResultMap>()
   const result: string[] = []
   const key01 = eventSubscribe.onEach((type, data) => {
     result.push(`${type}-${data}-01`)
@@ -20,11 +20,11 @@ test('eventSubscribe.offEach(key) test', () => {
 })
 
 test('eventSubscribe.offEach(fn) test', () => {
-  interface eventNameToResultMap {
+  interface __eventNameToResultMap {
     hello: number
     world: string
   }
-  const eventSubscribe = new EventSubscribe<eventNameToResultMap>()
+  const eventSubscribe = new EventSubscribe<__eventNameToResultMap>()
   const result: string[] = []
   const fn01 = (type: string, data: any) => {
     result.push(`${type}-${data}-01`)

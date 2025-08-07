@@ -5,7 +5,7 @@ test('eventSubscribe.onWithPreserve()', () => {
     log: string
   }
   const iBridge = new EventSubscribe<BridgeMap>({
-    eventWithPreserve: ['log']
+    __eventWithPreserve: ['log']
   })
 
   iBridge.trigger('log', 'hello 01')
@@ -24,7 +24,7 @@ test('eventSubscribe.onWithPreserve() with logger', () => {
     log: string
   }
   const iBridge = new EventSubscribe<BridgeMap>({
-    eventWithPreserve: ['log'],
+    __eventWithPreserve: ['log'],
     logger: (type, name, args) => {
       if (type === 'trigger') {
         iBridge.trigger('log', args[0])
@@ -48,8 +48,8 @@ test('eventSubscribe.onWithPreserve() limit', () => {
     log: string
   }
   const iBridge = new EventSubscribe<BridgeMap>({
-    eventWithPreserve: ['log'],
-    eventWithPreserveLimit: 2
+    __eventWithPreserve: ['log'],
+    __eventWithPreserveLimit: 2
   })
 
   iBridge.trigger('log', 'hello 01')

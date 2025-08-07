@@ -7,7 +7,7 @@ test('eventSubscribe.getPreserve()', () => {
     // logger: (...args) => {
     //   console.log(...args)
     // },
-    eventWithPreserve: ['log']
+    __eventWithPreserve: ['log']
   })
 
   iBridge.trigger('log', 'hello 01')
