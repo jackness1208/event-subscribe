@@ -221,11 +221,11 @@ export declare class EventSubscribe<
   private eventKeyPadding
   /** 搭配 onWithPreserve 使用，记录列表事件的完整log */
   private eventWithPreserve
-  private eventWithPreserveMap
+  private eventWithPreserveNameToDatasMap
   /** destroy 时回调Fns */
-  private eventDestroyFnMap
+  private eventDestroyKeyToFnMap
   /** 订阅全部事件的 fns */
-  private eventEachFnMap
+  private eventEachKeyToFnMap
   /** 订阅全部事件的 历史记录列表 (用于 onEach()) */
   private eventEachPreserves
   /** 初始化 */
