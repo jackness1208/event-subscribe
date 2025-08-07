@@ -17,7 +17,8 @@
   "main": "index.js",
   "scripts": {
     "d": "cd packages/event-subscribe && npm run d",
-    "test": "cd packages/event-subscribe && npm run test",
+    "test": "lerna run test",
+    "prettier": "lerna run prettier",
     "jest": "cd packages/event-subscribe && jest"
   },
   "repository": {

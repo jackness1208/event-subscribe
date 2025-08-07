@@ -1,5 +1,9 @@
 # 版本变更
 
+## 2.1.0 (2025-08-07)
+
+- feat: 新增 `onGlobal` 方法，用于配置了 autoPrefix 的场景，此时各页面 destroy 时，通过 onGlobal 订阅的事件不受影响
+
 ## 2.0.0 (2025-08-07)
 
 - feat: 新增 `autoEventPrefix` 参数，用于设置为自动添加前缀, 适用与跨页面 eventBridge 共用场景

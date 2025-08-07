@@ -1,5 +1,5 @@
 /** 事件 hooks */
-export interface __eventNameToResultMap {
+export interface EventNameToResultMap {
   [eventName: string]: any
 }
 
@@ -35,7 +35,7 @@ export type EventSubscribeLoggerType =
   | 'init'
 
 /** logger 格式 */
-export type EventSubscribeLogger<M extends __eventNameToResultMap> = (
+export type EventSubscribeLogger<M extends EventNameToResultMap> = (
   type: EventSubscribeLoggerType,
   eventName: keyof M,
   args: any[]
@@ -47,7 +47,7 @@ interface EventNameToKeysInfo {
   fn: EventCallback | undefined
 }
 
-export interface EventSubscribeOption<M extends __eventNameToResultMap> {
+export interface EventSubscribeOption<M extends EventNameToResultMap> {
   /** 需要搭配 onWithPreserve 使用，记录列表事件的完整log */
   __eventWithPreserve?: (keyof M)[]
   /** log 存储上限 */
@@ -57,7 +57,7 @@ export interface EventSubscribeOption<M extends __eventNameToResultMap> {
   logger?: EventSubscribeLogger<M>
 }
 export class EventSubscribe<
-  M extends __eventNameToResultMap,
+  M extends EventNameToResultMap,
   F extends Record<keyof M, any> = M,
   K extends keyof M = keyof M,
   R extends F[K] = F[K]
@@ -133,8 +133,12 @@ export class EventSubscribe<
   }
 
   /** 格式化 事件key */
-  private __formatEventKey(name: string, fnKey?: string) {
-    const prefix = this.__autoEventPrefix()
+  private __formatEventKey(op: { name: string; fnKey?: string; ignorePrefix?: boolean }) {
+    const { name, fnKey, ignorePrefix } = op
+    let prefix = ''
+    if (!ignorePrefix) {
+      prefix = this.__autoEventPrefix()
+    }
     if (prefix) {
       if (fnKey) {
         return `${prefix}-${fnKey}`
@@ -215,7 +219,10 @@ export class EventSubscribe<
       this.offEach(fnKey)
     }
     // key 关系初始化
-    const eventKey = this.__formatEventKey(`__each`, fnKey)
+    const eventKey = this.__formatEventKey({
+      name: `__each`,
+      fnKey
+    })
     this.__eventEachKeyToFnMap.set(eventKey, fn as () => void)
     this.__logger('onEach', 'bind', [eventKey])
 
@@ -235,7 +242,10 @@ export class EventSubscribe<
    * */
   offEach(ctx: string | ((...args: any[]) => void)) {
     if (typeof ctx === 'string') {
-      const eventKey = this.__formatEventKey(`__each`, ctx)
+      const eventKey = this.__formatEventKey({
+        name: `__each`,
+        fnKey: ctx
+      })
       const iFn = this.__eventEachKeyToFnMap.get(eventKey)
       if (iFn) {
         this.__eventEachKeyToFnMap.delete(eventKey)
@@ -297,7 +307,10 @@ export class EventSubscribe<
       this.offDestroy(fnKey)
     }
     // key 关系初始化
-    const eventKey = this.__formatEventKey(`__destroy`, fnKey)
+    const eventKey = this.__formatEventKey({
+      name: `__destroy`,
+      fnKey
+    })
     this.__eventDestroyKeyToFnMap.set(eventKey, fn)
     this.__logger('onDestroy', 'bind', [eventKey])
     return eventKey
@@ -306,7 +319,10 @@ export class EventSubscribe<
   /** 取消 destroy 订阅 */
   offDestroy(ctx: string | ((...args: any[]) => void)) {
     if (typeof ctx === 'string') {
-      const key = this.__formatEventKey(`__destroy`, ctx)
+      const key = this.__formatEventKey({
+        name: `__destroy`,
+        fnKey: ctx
+      })
       const iFn = this.__eventDestroyKeyToFnMap.get(key)
       if (iFn) {
         this.__eventDestroyKeyToFnMap.delete(ctx)
@@ -337,37 +353,13 @@ export class EventSubscribe<
     immediate?: boolean,
     fnKey?: string
   ) {
-    const { __eventNameToResultMap, __eventKeyToFnMap, __eventNameToKeysMap } = this
-    if (fnKey) {
-      // 查看是否之前已经有绑定, 有则先去掉
-      this.off(name, fnKey)
-    }
-
-    // key 关系初始化
-    const evetName = String(name)
-    const eventKey = this.__formatEventKey(evetName, fnKey)
-    __eventKeyToFnMap.set(eventKey, done)
-    const keys = __eventNameToKeysMap.get(evetName) || []
-    if (!keys.includes(eventKey)) {
-      keys.push(eventKey)
-      __eventNameToKeysMap.set(evetName, keys)
-    }
-
-    if (immediate && __eventNameToResultMap.has(name)) {
-      const data = __eventNameToResultMap.get(name) as IR
-      this.__logger('on', name, [
-        `on(${String(
-          name
-        )}, fn, immediate: ${!!immediate}, eventKey: ${eventKey}), 立马触发一次, data:`,
-        data
-      ])
-      done(data)
-    } else {
-      this.__logger('on', name, [
-        `on(${String(name)}, fn, immediate: ${!!immediate}, eventKey: ${eventKey})`
-      ])
-    }
-    return eventKey
+    return this.__on({
+      name,
+      done,
+      immediate,
+      fnKey,
+      ignorePrefix: true
+    })
   }
 
   /**
@@ -384,6 +376,30 @@ export class EventSubscribe<
     immediate?: boolean,
     fnKey?: string
   ) {
+    return this.__on({
+      name,
+      done,
+      immediate,
+      fnKey
+    })
+  }
+
+  /**
+   * 事件订阅
+   * @param name: 事件名称
+   * @param done: 回调方法
+   * @param immediate: 若订阅之前已经触发过，是否马上执行
+   * @param fnKey: 用于去掉订阅时标识
+   * @returns eventKey 订阅标识, 用于 off
+   * */
+  __on<IK extends K, IR = F[IK]>(op: {
+    name: IK
+    done: EventCallback<IR>
+    immediate?: boolean
+    fnKey?: string
+    ignorePrefix?: boolean
+  }) {
+    const { name, done, immediate, fnKey, ignorePrefix } = op
     const { __eventNameToResultMap, __eventKeyToFnMap, __eventNameToKeysMap } = this
     if (fnKey) {
       // 查看是否之前已经有绑定, 有则先去掉
@@ -392,7 +408,11 @@ export class EventSubscribe<
 
     // key 关系初始化
     const evetName = String(name)
-    const eventKey = this.__formatEventKey(evetName, fnKey)
+    const eventKey = this.__formatEventKey({
+      name: evetName,
+      fnKey,
+      ignorePrefix
+    })
     __eventKeyToFnMap.set(eventKey, done)
     const keys = __eventNameToKeysMap.get(evetName) || []
     if (!keys.includes(eventKey)) {
@@ -440,7 +460,9 @@ export class EventSubscribe<
         }
       },
       immediate,
-      this.__formatEventKey(`${String(name)}`)
+      this.__formatEventKey({
+        name: String(name)
+      })
     )
     return key
   }
@@ -483,7 +505,10 @@ export class EventSubscribe<
     let matchedInfo: EventNameToKeysInfo | undefined
     if (fnInfos.length) {
       if (typeof ctx === 'string') {
-        const key = this.__formatEventKey(eventName, ctx)
+        const key = this.__formatEventKey({
+          name: eventName,
+          fnKey: ctx
+        })
         fnInfos.forEach((info) => {
           if (info.key === key) {
             matchedInfo = info
@@ -592,8 +617,11 @@ export class EventSubscribe<
   }
 
   /** destroy 清空已绑定的事件 */
-  destroy() {
-    const prefix = this.__autoEventPrefix()
+  destroy(op?: { ignorePrefix?: boolean }) {
+    let prefix = ''
+    if (!op?.ignorePrefix) {
+      prefix = this.__autoEventPrefix()
+    }
     if (prefix) {
       this.__logger('destroy', prefix, [])
       // 只清除当前prefix 绑定的事件
