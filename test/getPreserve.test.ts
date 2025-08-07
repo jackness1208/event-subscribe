@@ -4,6 +4,9 @@ test('eventSubscribe.getPreserve()', () => {
     log: string
   }
   const iBridge = new EventSubscribe<BridgeMap>({
+    // logger: (...args) => {
+    //   console.log(...args)
+    // },
     eventWithPreserve: ['log']
   })
 

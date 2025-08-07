@@ -12,7 +12,7 @@ test('eventSubscribe autoEventPrefix 功能测试 & destroy 测试', () => {
       return curPrefixKey
     },
     logger: (...args) => {
-      console.log(...args)
+      // console.log(...args)
     }
   })
 

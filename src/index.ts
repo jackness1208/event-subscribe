@@ -31,6 +31,8 @@ export type EventSubscribeLoggerType =
   | 'triggerEach'
   | 'onDestroy'
   | 'offDestroy'
+  | 'markPreserve'
+  | 'init'
 
 /** logger 格式 */
 export type EventSubscribeLogger<M extends eventNameToResultMap> = (
@@ -88,19 +90,6 @@ export class EventSubscribe<
   private eventEachPreserves: { name: K; data: R }[] = []
   /** 初始化 */
   constructor(op?: EventSubscribeOption<M>) {
-    if (op?.eventWithPreserve) {
-      this.eventWithPreserve = op.eventWithPreserve
-    }
-    if (op?.eventWithPreserveLimit !== undefined) {
-      this.eventWithPreserveLimit = op.eventWithPreserveLimit
-    }
-    if (op?.logger) {
-      this.logger = op.logger
-    }
-    if (op?.autoEventPrefix) {
-      this.autoEventPrefix = op.autoEventPrefix
-    }
-
     // 数据初始化
     this.eventDestroyKeyToFnMap = new Map()
     this.eventEachKeyToFnMap = new Map()
@@ -109,6 +98,20 @@ export class EventSubscribe<
     this.eventKeyToFnMap = new Map()
     this.eventNameToKeysMap = new Map()
     this.eventNameToMiddlesMap = new Map()
+
+    if (op?.logger) {
+      this.logger = op.logger
+    }
+    if (op?.eventWithPreserve) {
+      this.eventWithPreserve = op.eventWithPreserve
+      this.logger('init', 'constructor', ['eventWithPreserve:', this.eventWithPreserve])
+    }
+    if (op?.eventWithPreserveLimit !== undefined) {
+      this.eventWithPreserveLimit = op.eventWithPreserveLimit
+    }
+    if (op?.autoEventPrefix) {
+      this.autoEventPrefix = op.autoEventPrefix
+    }
   }
 
   /** 根据 name 获取对应的回调函数列表 */
@@ -161,6 +164,7 @@ export class EventSubscribe<
     }
     datas.push(data)
 
+    this.logger('markPreserve', name, ['history total:', datas.length, 'data:', data])
     this.eventWithPreserveNameToDatasMap.set(name, datas)
   }
 
