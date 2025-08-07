@@ -1,12 +1,11 @@
-/.idea
-/.settings
-/.project
-/.gitignore
-/.rpt2_cache
-/node_modules
+.idea
+.settings
+.project
+.gitignore
+**/.rpt2_cache
 **/node_modules
-/output/test
-/test
+**/output/test
+**/test
 /.tmp
 
 *.db
