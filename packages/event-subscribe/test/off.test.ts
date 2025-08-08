@@ -1,6 +1,10 @@
 import { EventSubscribe } from '../src/index'
 test('eventSubscribe.off() test', () => {
-  const iBridge = new EventSubscribe()
+  const iBridge = new EventSubscribe({
+    logger: (...args) => {
+      // console.log(...args)
+    }
+  })
   iBridge.reset()
   const result: string[] = []
   const key = iBridge.on('hello', (ctx) => {

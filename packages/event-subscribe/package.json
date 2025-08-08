@@ -57,5 +57,6 @@
   "name": "event-subscribe",
   "repository": "https://github.com/jackness1208/event-subscribe.git",
   "author": "jackness",
-  "license": "MIT"
+  "license": "MIT",
+  "gitHead": "e03457bb11caf5922fa48afcda860dc23e35b9f6"
 }
