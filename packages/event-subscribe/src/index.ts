@@ -173,12 +173,12 @@ export class EventSubscribe<
     }
     datas.push(data)
 
-    this.__logger('__markPreserve', name as keyof EventMap, [
-      'history total:',
-      datas.length,
-      'data:',
-      data
-    ])
+    // this.__logger('__markPreserve', name as keyof EventMap, [
+    //   'history total:',
+    //   datas.length,
+    //   'data:',
+    //   data
+    // ])
     this.__eventWithPreserveNameToDatasMap.set(name, datas)
   }
 
