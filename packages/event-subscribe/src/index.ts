@@ -152,14 +152,14 @@ export class EventSubscribe<
       }
     } else {
       if (fnKey) {
-        return fnKey
+        return `${name}-${fnKey}`
       } else {
         return `${name}-${this.__eventKeyPadding++}`
       }
     }
   }
 
-  /** 添加历史记录 */
+  /** 添加历史记录(此处不能添加 logger 否则会出现死循环) */
   private __markPreserve(name: EventName, data: EventResult) {
     const needMark = this.__eventWithPreserve.includes(name)
     if (!needMark) {
@@ -172,13 +172,6 @@ export class EventSubscribe<
       datas.splice(0, datas.length - this.__eventWithPreserveLimit + 1)
     }
     datas.push(data)
-
-    // this.__logger('__markPreserve', name as keyof EventMap, [
-    //   'history total:',
-    //   datas.length,
-    //   'data:',
-    //   data
-    // ])
     this.__eventWithPreserveNameToDatasMap.set(name, datas)
   }
 
