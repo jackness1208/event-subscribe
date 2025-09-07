@@ -16,6 +16,15 @@ test('eventSubscribe autoEventPrefix 功能测试 & destroy 测试', () => {
     }
   })
 
+  // global
+  const pageGlobalArr: string[] = []
+  eventBridge.onGlobal('one', (data) => {
+    pageGlobalArr.push(data)
+  })
+  eventBridge.onGlobal('two', (data) => {
+    pageGlobalArr.push(data)
+  })
+
   // page 1
   const page1DataArr: string[] = []
   curPrefixKey = 'page1'
@@ -62,4 +71,5 @@ test('eventSubscribe autoEventPrefix 功能测试 & destroy 测试', () => {
 
   expect(page1DataArr).toEqual(['1', '2', '3', '4', '5', '6'])
   expect(page2DataArr).toEqual(['1', '2', '3', '4'])
+  expect(pageGlobalArr).toEqual(['1', '2', '3', '4', '5', '6'])
 })
