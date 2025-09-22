@@ -20,6 +20,7 @@ test('eventSubscribe.onWithPreserve()', () => {
 
 test('eventSubscribe.onWithPreserve() with logger', () => {
   const result: string[] = []
+  const result2: string[] = []
   interface BridgeMap {
     log: string
   }
@@ -39,7 +40,12 @@ test('eventSubscribe.onWithPreserve() with logger', () => {
     result.push(str)
   })
   iBridge.trigger('log', 'hello 04')
+
+  iBridge.onWithPreserve('log', (str) => {
+    result2.push(str)
+  })
   expect(result).toEqual(['hello 01', 'hello 02', 'hello 03', 'hello 04'])
+  expect(result2).toEqual(['hello 04'])
 })
 
 test('eventSubscribe.onWithPreserve() limit', () => {
