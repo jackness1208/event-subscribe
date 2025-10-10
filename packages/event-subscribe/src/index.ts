@@ -210,6 +210,8 @@ export class EventSubscribe<
       preserveLogs.forEach((ctx) => {
         done(ctx)
       })
+      // 调用完偶清空缓存列表
+      this.__eventWithPreserveNameToDatasMap.set(name, [])
     }
     return this.on(name, done, false, fnKey)
   }
