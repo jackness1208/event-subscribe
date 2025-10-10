@@ -665,7 +665,7 @@ export class EventSubscribe<
     let prefix = ''
     const autoPrefix = this.__autoEventPrefix()
 
-    if (autoPrefix) {
+    if (!op?.ignorePrefix && autoPrefix) {
       // op.prefix 优先级更高
       prefix = op?.prefix || autoPrefix
     }
