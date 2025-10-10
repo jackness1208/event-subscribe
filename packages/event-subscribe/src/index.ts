@@ -662,9 +662,12 @@ export class EventSubscribe<
 
   /** destroy 清空已绑定的事件 */
   destroy(op?: { ignorePrefix?: boolean; prefix?: string }) {
-    let prefix = op?.prefix || ''
-    if (!op?.ignorePrefix && !prefix) {
-      prefix = this.__autoEventPrefix()
+    let prefix = ''
+    const autoPrefix = this.__autoEventPrefix()
+
+    if (autoPrefix) {
+      // op.prefix 优先级更高
+      prefix = op?.prefix || autoPrefix
     }
     if (prefix) {
       this.__logger('destroy', prefix, [])
