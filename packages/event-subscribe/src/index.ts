@@ -655,6 +655,16 @@ export class EventSubscribe<
     return this.__eventNameToResultMap.get(key) as EM | undefined
   }
 
+  /** 删除事件 cache */
+  deleteCache<EN extends EventName>(key?: EN) {
+    if (key) {
+      this.__eventNameToResultMap.delete(key)
+    } else {
+      // 删除所有缓存
+      this.__eventNameToResultMap.clear()
+    }
+  }
+
   /** 同 destroy */
   reset() {
     this.destroy()
